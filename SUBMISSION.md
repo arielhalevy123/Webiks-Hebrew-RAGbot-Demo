@@ -1,14 +1,20 @@
 # Hebrew RAG Pipeline Enhancement — Retrieval Submission
 
-Ariel Halevy, 02.10.2026. Repositories: [Webiks-Hebrew-RAGbot fork](https://github.com/arielhalevy123/Webiks-Hebrew-RAGbot/tree/title-context-embedding) (engine change + tests) and this Demo fork, branch `title-context-embedding` (config, evaluation harness, results, run fixes).
+Ariel Halevy, 02.10.2026 (updated 20:40). Repositories: [Webiks-Hebrew-RAGbot fork](https://github.com/arielhalevy123/Webiks-Hebrew-RAGbot/tree/title-context-embedding) (engine change + tests) and this Demo fork, branch `title-context-embedding` (config, evaluation harness, results, run fixes).
 
 ## 1. What was improved, and why this direction
 
-**The change.** Each paragraph is embedded together with the title of the page it belongs
-to. Everything else stays: the fine-tuned retrieval model, the Elasticsearch index layout,
-the `/search` code, the latency. The only difference is the text handed to the embedder at
-indexing time: `"<page title>\n<paragraph>"` instead of `"<paragraph>"`. It is switched on
-by one key in the document config and off by removing it.
+**The change.** The page title is brought into each paragraph's vector, in two steps that
+are both switched on in the document config and off by removing two keys:
+1. the text handed to the embedder at indexing time becomes `"<page title>\n<paragraph>"`
+   instead of `"<paragraph>"` (`embed_context_fields: ["title"]`);
+2. the title is also embedded on its own and fused into the stored vector as
+   `normalise(0.3·unit(title) + 0.7·unit(text))` (`embed_title_weight: 0.3`).
+
+Because cosine similarity is linear in the query, searching that single fused vector is
+the same as scoring `0.3·cos(q, title) + 0.7·cos(q, text)`. So the fine-tuned model, the
+vector field, the Elasticsearch index layout, the `/search` code and the latency are all
+unchanged; only what is stored per paragraph changes.
 
 **Why this, and not hybrid BM25, a cross-encoder reranker, ANN, or query rewriting.** I
 measured the shipped system first and read its failures before choosing a direction.
@@ -24,6 +30,8 @@ measured the shipped system first and read its failures before choosing a direct
 - Two independent sources point the same way: Anthropic's published contextual-retrieval
   results (−35% retrieval failures from prepending document context before embedding), and
   the observation above about where the distinguishing word sits.
+- A separate title vector, fused with a weight, turned out to carry more signal than the
+  title diluted inside ~1,200 characters of body text (experiment 3 below).
 - It costs nothing at query time: no new model, no GPU, no extra dependency, and the
   original behaviour remains the default.
 
@@ -66,24 +74,35 @@ below affordable. (Their `run.py` also passes `main_score_function='cos_sim'`, w
 
 ## 3. Results
 
-Four representations, same model, same corpus, same 296 questions:
+Five representations, same model, same corpus, same 296 questions:
 
 | representation | hit@1 | **hit@3** | hit@5 | hit@10 | MRR@10 | nDCG@10 | gold absent from top-200 paragraphs |
 |---|---|---|---|---|---|---|---|
 | baseline: packed paragraphs, content only | 0.368 | 0.581 | 0.652 | 0.760 | 0.496 | 0.519 | 18 |
-| **packed paragraphs, title + content (shipped)** | **0.463** | **0.645** | 0.720 | **0.821** | **0.577** | **0.598** | **8** |
-| 256-token chunks, content only | 0.324 | 0.541 | 0.639 | 0.736 | 0.451 | 0.484 | 21 |
-| 256-token chunks, title + content | 0.405 | 0.672 | 0.730 | 0.818 | 0.549 | 0.578 | 11 |
+| packed, title + content (exp. 1) | 0.463 | 0.645 | 0.720 | 0.821 | 0.577 | 0.598 | 8 |
+| 256-token chunks, content only (exp. 2a) | 0.324 | 0.541 | 0.639 | 0.736 | 0.451 | 0.484 | 21 |
+| 256-token chunks, title + content (exp. 2b) | 0.405 | 0.672 | 0.730 | 0.818 | 0.549 | 0.578 | 11 |
+| **packed, title + content ⊕ title vector, w = 0.3 (exp. 3, shipped)** | **0.527** | **0.709** | **0.757** | **0.848** | **0.636** | **0.648** | **9** |
 
-**Baseline → shipped change:** hit@1 +9.5pp, hit@3 +6.4pp, MRR@10 +8.1pp. Per question:
-114 improved (39 reach rank 1), 47 worse (11 lose rank 1), 135 unchanged. The gain is
-unchanged under the shipped candidate pool (top-50 paragraphs, then dedupe to pages), so
-the production `/search` path delivers it with no query-side change.
+**Baseline → shipped change:** hit@1 +15.9pp, hit@3 +12.8pp, MRR@10 +14.0pp. Per question:
+138 improved (62 reach rank 1), 35 worse (15 lose rank 1), 123 unchanged. Experiment 1
+alone (title in the text) accounts for hit@1 +9.5pp with 114 improved / 47 worse; the
+fused title vector adds the rest (95 better / 38 worse on top of it). The gains hold under
+the shipped candidate pool (top-50 paragraphs, then dedupe to pages), so the production
+`/search` path delivers them with no query-side change.
 
-**Cost side, stated plainly.** 9 of the 11 questions that lost rank 1 dropped only to rank
-2, displaced by a sibling page: the title makes siblings distinguishable, not the choice
-between them certain. One genuine regression: *"נפלתי ברחוב..."* now ranks a street/police
-page first.
+**How the weight was chosen, so the number is not tuned on its own test set.** The weight
+w was swept on the even-indexed questions and the result reported on the odd-indexed ones,
+and vice versa. Picked on even → odd half: hit@1 0.453 → 0.493, hit@3 0.642 → 0.689. Picked
+on odd → even half: hit@1 0.473 → 0.527, hit@3 0.649 → 0.696. The plateau is flat from
+w = 0.2 to 0.4 (full-set hit@1 0.527 / 0.527 / 0.530), so 0.3, the middle, is shipped. The
+honest headline is therefore hit@1 ≈ 0.49–0.53 and hit@3 ≈ 0.69–0.70; the table row is what
+the shipped configuration scores on this set.
+
+**Cost side, stated plainly.** Of the 35 questions that got worse, most moved by one or two
+ranks between sibling pages: the title makes siblings distinguishable, not the choice
+between them certain. One genuine regression from experiment 1 (*"נפלתי ברחוב..."* ranking a
+street/police page first) persists.
 
 **A prediction that was half wrong.** Before experiment 1 I wrote down that the title would
 fix near misses (rank 2–3) and barely touch deep misses. Near misses moved as predicted;
@@ -111,14 +130,14 @@ candidate pool to 100/200/500: no change in any hit@k; only useful with a second
 
 | bucket | n | % |
 |---|---|---|
-| gold page at rank 1 | 137 | 46.3 |
-| rank 2–3, a sibling page (≥2 shared title words) is first | 21 | 7.1 |
-| rank 2–3, other | 33 | 11.1 |
-| rank 4–10 | 52 | 17.6 |
-| rank >10 or absent | 53 | 17.9 |
+| gold page at rank 1 | 156 | 52.7 |
+| rank 2–3, a sibling page (≥2 shared title words) is first | 22 | 7.4 |
+| rank 2–3, other | 32 | 10.8 |
+| rank 4–10 | 41 | 13.9 |
+| rank >10 or absent | 45 | 15.2 |
 
 The 18% at ranks 2–3 are still inside the three pages the LLM receives. The real losses are
-the 35% at rank 4 or worse, and roughly half of those are questions that do not identify a
+the 29% at rank 4 or worse (35% in the baseline), and roughly half of those are questions that do not identify a
 page on their own (*"עד איזה גיל אישה יכול להוציא נכות"* → gold *גיל פרישה מעבודה*): they
 read like comments posted on a page, with the page as the label. No retrieval change fixes
 those; they cap any method, including rerankers.
@@ -128,16 +147,22 @@ those; they cap any method, including rerankers.
 `Webiks-Hebrew-RAGbot` (fork, branch `title-context-embedding`):
 - `document.py`: optional `embed_context_fields` list in the document config, validated
   against `saved_fields`, default `[]` (= original behaviour).
-- `engine.py`: `Engine.text_to_embed(doc)` joins the context fields and `field_to_embed`
-  with newlines; used by both ingest paths (`update_docs`, `create_paragraphs`). Query
-  embedding, vector field name, index layout and `search()` untouched.
-- `tests/test_embed_context.py`: 5 tests (default unchanged; title prepended; empty title
-  skipped; query path unaffected; unknown field rejected). The pre-existing tests import a
+- `document.py`: optional `embed_title_weight` (float in [0, 1), default 0) and
+  `title_field` (default `"title"`).
+- `engine.py`: `Engine.text_to_embed(doc)` joins the context fields and `field_to_embed`;
+  `Engine.embed_document(doc)` returns the stored vector: the plain text vector when the
+  weight is 0, otherwise the fused unit vector, with the title vector cached per distinct
+  title. Both ingest paths (`update_docs`, `create_paragraphs`) use it. Query embedding,
+  vector field name, index layout and `search()` untouched.
+- `tests/test_embed_context.py`: 8 tests (default unchanged; title prepended; empty title
+  skipped; query path unaffected; unknown field rejected; weight 0 keeps the plain vector;
+  fusion maths on orthogonal unit vectors and the title cache; weight range validated). The pre-existing tests import a
   `ragbot` package from a `src/` directory that does not exist in the repository.
 - `pyproject.toml` so a checkout is installable (`pip install -e .`).
 
 `Webiks-Hebrew-RAGbot-Demo` (this fork, same branch):
-- `app/src/doc-config.json`: `"embed_context_fields": ["title"]`. Remove the key → original.
+- `app/src/doc-config.json`: `"embed_context_fields": ["title"]` and `"embed_title_weight": 0.3`.
+  Remove both keys → original system.
 - `requirements.txt`: re-encoded from UTF-16 to UTF-8, Intel-only pins restricted to
   Windows, engine dependency points at the fork branch.
 - `retrieval_eval/`: the harness and experiment scripts (README inside). `results/`: the
@@ -145,8 +170,10 @@ those; they cap any method, including rerankers.
 - Frontend and all other backend code untouched.
 
 Verified: with the Demo config on, `Engine.create_paragraphs` produces vectors with cosine
-1.000000 against the cached vectors the table was computed on, i.e. the integrated backend
-ships the measured gain, not an approximation.
+1.000000 against the cached `fused_w0.3` vectors the shipped row was computed on, i.e. the
+integrated backend ships the measured gain, not an approximation. The live Demo was
+re-indexed from those vectors and the sibling example from §1 now returns הנחה בארנונה
+לנכים first, לנכי עבודה second, לעיוורים third.
 
 ## 5. Running the updated backend locally
 
@@ -180,7 +207,7 @@ docker run -d --name webiks-es -e "discovery.type=single-node" -e "xpack.securit
 # 5. index. Either the Demo's own route (one paragraph per call, ~6.5 h for the full corpus on CPU):
 #    curl localhost:5050/initialize_elastic_from_json
 #    or the batched loader, same documents, minutes on MPS/GPU:
-python retrieval_eval/fast_index.py --corpus data/paragraph_corpus.json --embed-field title_content
+python retrieval_eval/fast_index.py --corpus data/paragraph_corpus.json   # encodes with the Demo config (title + fused title vector)
 
 # 6. run (must be started from app/src: main.py uses flat imports)
 cd app/src && python -m uvicorn main:app --host 0.0.0.0 --port 5050
@@ -189,8 +216,8 @@ curl -s -X POST localhost:5050/search -H 'Content-Type: application/json' \
   -d '{"query":"מי זכאי לקצבת זקנה?","asked_from":"http://localhost:5050/"}'
 ```
 
-To compare with the original behaviour: delete `embed_context_fields` from
-`app/src/doc-config.json`, re-index (`--embed-field content` with the loader), restart.
+To compare with the original behaviour: delete `embed_context_fields` and
+`embed_title_weight` from `app/src/doc-config.json`, re-index, restart.
 
 To reproduce the numbers in §3 (no server needed):
 ```bash
@@ -198,7 +225,9 @@ python retrieval_eval/embed_corpus.py --variant content
 python retrieval_eval/embed_corpus.py --variant title_content
 python retrieval_eval/eval_retrieval.py --variant content
 python retrieval_eval/eval_retrieval.py --variant title_content
-python retrieval_eval/compare_runs.py results/content__heldout.json results/title_content__heldout.json
+python retrieval_eval/title_fusion.py          # cross-fitted weight sweep, writes data/emb/fused_w*.npy via the steps in its header
+python retrieval_eval/eval_retrieval.py --variant fused_w0.3
+python retrieval_eval/compare_runs.py results/content__heldout.json results/fused_w0.3__heldout.json
 ```
 
 ## 6. Next steps I would take
