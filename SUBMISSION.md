@@ -1,6 +1,6 @@
 # Hebrew RAG Pipeline Enhancement — Retrieval Submission
 
-Ariel Halevy, 02.10.2026 (updated 20:40). Repositories: [Webiks-Hebrew-RAGbot fork](https://github.com/arielhalevy123/Webiks-Hebrew-RAGbot/tree/title-context-embedding) (engine change + tests) and this Demo fork, branch `title-context-embedding` (config, evaluation harness, results, run fixes).
+Ariel Halevy, 02.10.2026 (updated 23:25). Repositories: [Webiks-Hebrew-RAGbot fork](https://github.com/arielhalevy123/Webiks-Hebrew-RAGbot/tree/title-context-embedding) (engine change + tests) and this Demo fork, branch `title-context-embedding` (config, evaluation harness, results, run fixes).
 
 ## 1. What was improved, and why this direction
 
