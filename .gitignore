@@ -5,4 +5,7 @@ data/
 .idea/
 *__pycache__/
 */htmlcov/
-*.coverage
+*.coverage.venv*/
+data/
+results/*.csv
+.DS_Store
