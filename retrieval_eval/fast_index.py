@@ -32,7 +32,7 @@ def main():
     ap.add_argument("--model-dir", default=MODEL)
     ap.add_argument("--model-name", default="Webiks_Hebrew_RAGbot_KolZchut_QA_Embedder_v1.0",
                     help="suffix used in the vector field name; must match doc-config.json model_name")
-    ap.add_argument("--embed-field", default="content", choices=["content", "title_content"],
+    ap.add_argument("--embed-field", default="content",
                     help="what text goes into the embedder (the stored 'content' field is unchanged)")
     ap.add_argument("--es", default="http://localhost:9200")
     ap.add_argument("--batch", type=int, default=256)

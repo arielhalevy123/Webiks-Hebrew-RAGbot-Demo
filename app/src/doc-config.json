@@ -11,5 +11,6 @@
   "field_to_embed": "content",
   "embed_context_fields": [
     "title"
-  ]
+  ],
+  "embed_title_weight": 0.3
 }
