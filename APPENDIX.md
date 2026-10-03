@@ -180,8 +180,7 @@ those; they cap any method, including rerankers.
 Verified: with the Demo config on, `Engine.create_paragraphs` produces vectors with cosine
 1.000000 against the cached `fused_w0.3` vectors the shipped row was computed on, i.e. the
 integrated backend ships the measured gain, not an approximation. The live Demo was
-re-indexed from those vectors and the sibling example from §1 now returns הנחה בארנונה
-לנכים first, לנכי עבודה second, לעיוורים third.
+re-indexed from those vectors.
 
 ## 5. Running the updated backend locally
 
