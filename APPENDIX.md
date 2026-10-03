@@ -100,6 +100,13 @@ w = 0.2 to 0.4 (full-set hit@1 0.527 / 0.527 / 0.530), so 0.3, the middle, is sh
 honest headline is therefore hit@1 ≈ 0.49–0.53 and hit@3 ≈ 0.69–0.70; the table row is what
 the shipped configuration scores on this set.
 
+**On all 2,951 unique questions** (the 296 held-out plus the 2,655 training questions, which
+inflate the baseline further): baseline hit@1 0.412 / hit@3 0.664 / MRR 0.557 → title in text
+0.486 / 0.718 / 0.621 → shipped 0.529 / 0.753 / 0.655; 1,177 improved, 523 worse, 1,251
+unchanged. Ten times the sample, same direction. Query-side experiments are not re-run on
+this set because the model was trained on these questions in their original wording, which
+would penalise any rewrite for reasons unrelated to its merit.
+
 **Cost side, stated plainly.** Of the 35 questions that got worse, most moved by one or two
 ranks between sibling pages: the title makes siblings distinguishable, not the choice
 between them certain. One genuine regression from experiment 1 (*"נפלתי ברחוב..."* ranking a
