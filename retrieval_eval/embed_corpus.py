@@ -8,6 +8,7 @@ without re-encoding. Vectors are from the shipped fine-tuned model, unchanged.
 Variants (what text goes into the embedder; stored text is never changed):
   content        : the paragraph body only  (= the shipped system, baseline)
   title_content  : "<page title>\n<body>"    (cheap contextual embedding)
+  ctx_title_content : "<LLM-written context>\n<page title>\n<body>"  (needs data/llm_context.jsonl, see gen_context.py)
 
 Output: data/emb/<variant>.npy (float32, N x 1024) + data/emb/<variant>.keys.json (paragraph keys in row order)
 """
@@ -21,7 +22,22 @@ MODEL = os.environ.get("RAG_MODEL_DIR", os.path.join(REPO, "app", "artifacts", "
 RESULTS = os.environ.get("RAG_RESULTS_DIR", os.path.join(REPO, "results"))
 TRAINER = os.environ.get("RAG_TRAINER_DIR", os.path.join(os.path.dirname(REPO), "Webiks-Hebrew-RAGbot-Trainer"))
 
-def texts_for(variant, cols, keys):
+def load_context(path):
+    ctx = {}
+    for line in open(path, encoding="utf-8"):
+        try:
+            r = json.loads(line); ctx[r["key"]] = r["context"]
+        except Exception:
+            pass
+    return ctx
+
+def texts_for(variant, cols, keys, ctx_path=None):
+    if variant == "ctx_title_content":
+        ctx = load_context(ctx_path)
+        missing = [k for k in keys if k not in ctx]
+        if missing:
+            raise SystemExit(f"{len(missing)} paragraphs have no generated context in {ctx_path}; run gen_context.py to completion first")
+        return [f"{ctx[k]}\n{cols['title'][k] or ''}\n{cols['content'][k] or ''}" for k in keys]
     if variant == "content":
         return [cols["content"][k] or "" for k in keys]
     if variant == "title_content":
@@ -34,6 +50,7 @@ def main():
     ap.add_argument("--variant", default="content")
     ap.add_argument("--out-dir", default=os.path.join(DATA, "emb"))
     ap.add_argument("--batch", type=int, default=32)
+    ap.add_argument("--context", default=None, help="llm_context.jsonl for the ctx_title_content variant (default: <data dir>/llm_context.jsonl)")
     a = ap.parse_args()
 
     import torch
@@ -43,7 +60,8 @@ def main():
     d = json.load(open(a.corpus, encoding="utf-8"))
     cols = {k: v for k, v in d.items() if isinstance(v, dict)}
     keys = list(cols["content"].keys())
-    texts = texts_for(a.variant, cols, keys)
+    ctx_path = a.context or os.path.join(os.path.dirname(a.corpus), "llm_context.jsonl")
+    texts = texts_for(a.variant, cols, keys, ctx_path)
     print(f"variant={a.variant} paragraphs={len(keys)} device={device}", flush=True)
 
     model = SentenceTransformer(MODEL, device=device); model.eval()
