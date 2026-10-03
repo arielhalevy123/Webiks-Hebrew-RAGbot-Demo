@@ -1,5 +1,23 @@
 # Webiks-Hebrew-RAGbot-Demo
 
+> **This fork: title-aware paragraph vectors for the retrieval stage** (Ariel Halevy, home assignment, October 2026).
+> Branch `title-context-embedding`, [PR #1 of this fork](https://github.com/arielhalevy123/Webiks-Hebrew-RAGbot-Demo/pull/1). Upstream: [NNLP-IL/Webiks-Hebrew-RAGbot-Demo](https://github.com/NNLP-IL/Webiks-Hebrew-RAGbot-Demo).
+>
+> | | |
+> |---|---|
+> | **What changed** | Each paragraph's stored vector now carries its page title: the title is prepended to the embedded text and a separately embedded title vector is fused in at weight 0.3. Two opt-in keys in [`app/src/doc-config.json`](app/src/doc-config.json); remove them and the system is the original. Query path, index layout, API and frontend unchanged. Engine side: [arielhalevy123/Webiks-Hebrew-RAGbot PR #1](https://github.com/arielhalevy123/Webiks-Hebrew-RAGbot/pull/1). |
+> | **Result** | 296 held-out questions, full corpus: hit@1 0.368 → **0.527**, hit@3 0.581 → **0.709**, MRR@10 0.496 → **0.636**; 138 questions improved, 35 worse. Same direction on all 2,951 questions (hit@1 0.412 → 0.529). |
+> | **Read first** | [`SUBMISSION.md`](SUBMISSION.md) (2 pages: what, why, metrics, results, how to run) · [`APPENDIX.md`](APPENDIX.md) (full experiment record, error analysis, rejected alternatives) |
+> | **Reproduce** | [`retrieval_eval/README.md`](retrieval_eval/README.md) — the harness scores a variant in ~3 s on cached vectors and matches Webiks' own evaluator to 4 decimals. Every number comes from a JSON in [`results/`](results/). |
+> | **Slides** | [`slides.pptx`](slides.pptx) / [`slides.pdf`](slides.pdf) (English) · [`slides_he.pptx`](slides_he.pptx) / [`slides_he.pdf`](slides_he.pdf) (Hebrew) |
+> | **Screenshots** | [`docs/screenshots/`](docs/screenshots/) — the live Demo answering with the new vectors, the evaluation run, the test suites |
+> | **Run it** | §5 of `SUBMISSION.md`. Short version: Python 3.10–3.12, `pip install -r requirements.txt`, Elasticsearch 8.12.2 in Docker, model in `app/artifacts/`, corpus in `data/`, then `python retrieval_eval/fast_index.py --corpus data/paragraph_corpus.json` (same documents as `/initialize_elastic_from_json`, minutes instead of hours) and `cd app/src && python -m uvicorn main:app --port 5050`. |
+> | **Known upstream quirks** | `uvicorn app.src.main:app` does not resolve; start from `app/src`. Port 5000 is AirPlay on macOS. The openai client refuses an empty key even with `IS_MOCK_GPT_CLIENT=true`; any non-empty string works. 6 tests in `tests/test_main.py` error on upstream and here alike (the test patches `builtins.open` during import). |
+
+The original README follows.
+
+---
+
 ## Overview
 
 This project is a FastAPI-based application that integrates with Elasticsearch and a rag-bot to perform various document-related operations.

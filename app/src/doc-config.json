@@ -8,5 +8,9 @@
   },
   "field_for_llm": "content",
   "model_name": "Webiks_Hebrew_RAGbot_KolZchut_QA_Embedder_v1.0",
-  "field_to_embed": "content"
+  "field_to_embed": "content",
+  "embed_context_fields": [
+    "title"
+  ],
+  "embed_title_weight": 0.3
 }
