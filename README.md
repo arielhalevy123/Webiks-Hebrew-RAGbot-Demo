@@ -1,7 +1,7 @@
 # Webiks-Hebrew-RAGbot-Demo
 
 > **This fork: title-aware paragraph vectors for the retrieval stage** (Ariel Halevy, home assignment, October 2026).
-> Branch `title-context-embedding`, merged into `main` of this fork. Upstream: [NNLP-IL/Webiks-Hebrew-RAGbot-Demo](https://github.com/NNLP-IL/Webiks-Hebrew-RAGbot-Demo).
+> Branch `title-context-embedding`, [PR #1 of this fork](https://github.com/arielhalevy123/Webiks-Hebrew-RAGbot-Demo/pull/1). Upstream: [NNLP-IL/Webiks-Hebrew-RAGbot-Demo](https://github.com/NNLP-IL/Webiks-Hebrew-RAGbot-Demo).
 >
 > | | |
 > |---|---|
