@@ -1,0 +1,152 @@
+[
+ {
+  "set": "agent_questions",
+  "n": 150,
+  "excluded_docs": [],
+  "hit@1": {
+   "content": 0.533,
+   "fused_w0.3": 0.56,
+   "delta": 0.027,
+   "ci95": [
+    -0.04,
+    0.093
+   ]
+  },
+  "hit@3": {
+   "content": 0.747,
+   "fused_w0.3": 0.773,
+   "delta": 0.027,
+   "ci95": [
+    -0.027,
+    0.08
+   ]
+  },
+  "mrr@10": {
+   "content": 0.653,
+   "fused_w0.3": 0.675,
+   "delta": 0.022,
+   "ci95": [
+    -0.024,
+    0.069
+   ]
+  },
+  "improved": 32,
+  "worse": 35,
+  "unchanged": 83,
+  "sign_test_p": 0.807
+ },
+ {
+  "set": "agent_questions_strict",
+  "n": 33,
+  "excluded_docs": [],
+  "hit@1": {
+   "content": 0.424,
+   "fused_w0.3": 0.333,
+   "delta": -0.091,
+   "ci95": [
+    -0.212,
+    0.03
+   ]
+  },
+  "hit@3": {
+   "content": 0.576,
+   "fused_w0.3": 0.455,
+   "delta": -0.121,
+   "ci95": [
+    -0.242,
+    -0.03
+   ]
+  },
+  "mrr@10": {
+   "content": 0.515,
+   "fused_w0.3": 0.406,
+   "delta": -0.109,
+   "ci95": [
+    -0.22,
+    -0.013
+   ]
+  },
+  "improved": 6,
+  "worse": 15,
+  "unchanged": 12,
+  "sign_test_p": 0.078
+ },
+ {
+  "set": "agent_questions",
+  "n": 148,
+  "excluded_docs": [
+   10075,
+   11477
+  ],
+  "hit@1": {
+   "content": 0.534,
+   "fused_w0.3": 0.568,
+   "delta": 0.034,
+   "ci95": [
+    -0.027,
+    0.095
+   ]
+  },
+  "hit@3": {
+   "content": 0.75,
+   "fused_w0.3": 0.784,
+   "delta": 0.034,
+   "ci95": [
+    -0.02,
+    0.088
+   ]
+  },
+  "mrr@10": {
+   "content": 0.653,
+   "fused_w0.3": 0.684,
+   "delta": 0.031,
+   "ci95": [
+    -0.012,
+    0.075
+   ]
+  },
+  "improved": 32,
+  "worse": 33,
+  "unchanged": 83,
+  "sign_test_p": 1.0
+ },
+ {
+  "set": "agent_questions_strict",
+  "n": 31,
+  "excluded_docs": [
+   10075,
+   11477
+  ],
+  "hit@1": {
+   "content": 0.419,
+   "fused_w0.3": 0.355,
+   "delta": -0.065,
+   "ci95": [
+    -0.194,
+    0.065
+   ]
+  },
+  "hit@3": {
+   "content": 0.581,
+   "fused_w0.3": 0.484,
+   "delta": -0.097,
+   "ci95": [
+    -0.226,
+    0.0
+   ]
+  },
+  "mrr@10": {
+   "content": 0.508,
+   "fused_w0.3": 0.432,
+   "delta": -0.075,
+   "ci95": [
+    -0.18,
+    0.013
+   ]
+  },
+  "improved": 6,
+  "worse": 13,
+  "unchanged": 12,
+  "sign_test_p": 0.167
+ }
+]
