@@ -2,6 +2,87 @@
 
 Companion to `SUBMISSION.md` (the 2-page summary). Everything here is measured; the per-run JSON is under `results/`.
 
+## 0. Update 05.10.2026: what changed after independent evaluation
+
+Sections 1–7 below are the record up to 04.10, when the shipped configuration was **title in text
++ a separate title vector fused at w = 0.3**; "shipped" there means that configuration. On 05.10 two
+independent question sets were added, and the shipped configuration changed as a result.
+
+**New evaluation sets.**
+- *Agent-written clean set, 150* (`retrieval_eval/eval_sets/agent_clean_150/`): pages with no row in the
+  QA file (5,367 of 7,007; ≥300 characters of non-boilerplate text; Ariel's 60 human-set pages excluded;
+  150 sampled with seed 20261005). One question per page, written by an LLM agent from the first 900
+  characters of the page body **with the title hidden**; titles attached by script afterwards. The set
+  therefore cannot favour a title change by construction (if anything it favours the baseline, whose
+  vectors embed exactly the text the questions came from). 33 questions share no 3+-letter word with
+  their title (the "strict" subset). Method note, selection and assembly scripts are in that folder.
+- *IdoAgai's public generated set, 300*: from his public fork; questions written by an LLM from one
+  paragraph each, low lexical overlap by design; 56 of its pages have other questions in the QA file.
+  Our baseline reproduces his (0.553 vs 0.550). Fetched by `retrieval_eval/fetch_idoagai_set.py`;
+  only aggregate results are committed (`results/clean_eval/idoagai_generated_300_summary.json`).
+
+**Index-side variants on the three sets** (hit@1 / hit@3 / MRR@10; evaluator `eval_retrieval.py`):
+
+| representation | vendor 296 | agent clean 150 | IdoAgai 300 | agent strict 33 | IdoAgai strict 92 |
+|---|---|---|---|---|---|
+| content (original) | .368/.581/.496 | .533/.747/.653 | .553/.747/.659 | .424/.576/.515 | .348/.587/.479 |
+| **title in text (shipped from 05.10)** | **.463/.645/.577** | **.600/.787/.711** | **.537/.757/.663** | .424/.515/.500 | .304/.576/.460 |
+| + title vector w=0.2 | .527/.699/.631 | .573/.787/.690 | .553/.757/.661 | .333/.485/.426 | .326/.543/.446 |
+| + title vector w=0.3 (shipped until 04.10) | .527/.709/.636 | .560/.773/.675 | .543/.730/.649 | .333/.455/.406 | .293/.467/.409 |
+| + title vector w=0.4 | .530/.696/.635 | .540/.747/.655 | .530/.727/.635 | .303/.424/.373 | .228/.467/.362 |
+
+Per question vs content: title in text 114/47 (vendor), 38/19 (agent), 62/54 (Ido); w=0.3 138/35,
+32/35, 61/74. Bootstrap 95% CIs on the two independent sets include zero for every hit@1/hit@3/MRR delta
+except w=0.3 on the Ido strict subset (hit@3 −.120 [−.217, −.033], MRR −.070 [−.126, −.019]). Head to
+head on the agent set, w=0.3 beats title-in-text on 13 questions and loses on 36.
+
+**Reading.** The title helps when the question names the population or sub-case (as the vendor
+questions, written with the page in view, and real Kol-Zchut questions do); it is neutral when the
+question derives from the body. The separate title vector adds +6.4pp hit@1 on the vendor set, gives it
+back on both independent sets, gets worse monotonically with its weight, and hurts where the title says
+little about the body (organisation names; pages whose stored text belongs to another page). Its weight
+had been cross-fitted on the vendor questions, so it inherited their title-shaped distribution. IdoAgai's
+FINDINGS.md reports the same asymmetry for his reranker (title worth +7.8pp on the vendor set, +3.7pp on
+his generated set). **Decision: ship title in text only; keep `embed_title_weight` as an off-by-default
+engine knob.** On all 2,951 QA questions title in text gives hit@1 0.412 → 0.486, hit@3 0.664 → 0.718,
+1,027 better / 452 worse.
+
+**Experiment 7: an LLM picks among the candidate titles (query time).** All 7,007 titles are ~140k
+tokens, so instead the base retriever's top 30 pages (gold among them 85–96%) go to gpt-4o-mini with the
+question; it returns up to 10 numbers, best first (variant A). Variant B, Ariel's literal idea, has it
+rewrite the question with terms from fitting titles and searches again. `retrieval_eval/title_llm.py`,
+outputs cached in `results/title_llm/` (2,984 calls in total, $0.36, median 0.77 s, p99 1.9 s).
+
+| | vendor 296 | agent 150 | IdoAgai 300 |
+|---|---|---|---|
+| content (same query vectors) | .361/.581/.491 | .527/.747/.650 | .553/.743/.659 |
+| title in text | .463/.645/.577 | .600/.787/.711 | .537/.757/.663 |
+| A on the original index (rerank only) | .520/.713/.630 | .653/.820/.742 | .623/.800/.722 |
+| **A on title in text** | **.601/.753/.692** | **.667/.840/.757** | .607/.773/.706 |
+| B rewrite, on title in text (alone / RRF with original) | .476 / .480 hit@1 | .613 / .620 | .607 / .590 |
+
+A on title in text vs content, hit@1 95% CI: [+.186, +.297], [+.067, +.213], [+.003, +.103]; better/worse
+152/31, 52/20, 79/63. The LLM's first choice is the retriever's own #1 in 70% of calls, #2 13%, #3 5%,
+#4–10 10%; rank-1 changes vs title in text +48/−7, +16/−6, +34/−13; 60 repeated calls gave the same first
+choice 60/60 (full list identical 53/60). The script's baselines differ from the evaluator's by 1–2
+questions (content .361 vs .368) because of float-level near-ties in query encoding; all rows in that
+table share query vectors. **Shipped as an optional stage, off by default** (`app/src/title_rerank.py`,
+`app/src/llm_factory.py`): it needs an LLM in the retrieval path (+~0.8 s, a key; nothing in the brief's
+mock mode), two of the three sets are LLM-written, and it is a second direction on top of the one the
+brief asks for. Verified end to end on a second backend instance (`docs/screenshots/06`, `07`).
+
+**Integration fix found while switching.** `retrieval_eval/fast_index.py`, which §5 of the submission
+used for indexing, defaulted to embedding `content` only and never read `doc-config.json`; following the
+04.10 instructions literally produced the original system's vectors. It now derives the representation
+from the config (title prepending and, if set, the fused title vector, with the engine's formula);
+64-paragraph test indices built both ways match the cached vectors at cosine 1.000000.
+
+**Corpus defect.** At least two pages store another page's text under their own title and link (doc
+10075: title about legal advice for Holocaust survivors, text of "מלווה סיעודי לנפגעי פעולת איבה"; doc
+11477: title about trauma support centres, text about re-assessing a work-injury disability). A rough
+check (rank of a page's own title vector among all 7,007 against its mean content vector) flags up to 271
+pages; organisation names also score low on it, so that is an upper bound.
+
 
 ## 1. What was improved, and why this direction
 
@@ -180,8 +261,7 @@ those; they cap any method, including rerankers.
 Verified: with the Demo config on, `Engine.create_paragraphs` produces vectors with cosine
 1.000000 against the cached `fused_w0.3` vectors the shipped row was computed on, i.e. the
 integrated backend ships the measured gain, not an approximation. The live Demo was
-re-indexed from those vectors and the sibling example from §1 now returns הנחה בארנונה
-לנכים first, לנכי עבודה second, לעיוורים third.
+re-indexed from those vectors.
 
 ## 5. Running the updated backend locally
 
@@ -245,8 +325,8 @@ python retrieval_eval/compare_runs.py results/content__heldout.json results/fuse
    is what stopped it.
 2. A clean evaluation set written by people, not drawn from the training CSV, to replace
    the upper-bound numbers with real ones.
-3. A reranker as a *measured* second stage once the first stage is as good as its
-   representation allows; the remaining 18% at ranks 2–3 are its target.
+3. A reranker as a *measured* second stage: done on 05.10 as the optional LLM title rerank (§0);
+   next would be testing it on real traffic and against a paragraph-level cross-encoder.
 4. Make `/search` return an error status instead of a 200 with an empty body when retrieval
    throws (today the frontend just goes silent).
 

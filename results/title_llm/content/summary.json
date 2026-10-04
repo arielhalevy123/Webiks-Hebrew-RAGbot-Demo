@@ -1,0 +1,300 @@
+{
+ "vendor_heldout_296": {
+  "n": 296,
+  "gold_in_30_candidates": 0.8547297297297297,
+  "bad_json": 0,
+  "variants": {
+   "content (original system)": {
+    "hit@1": 0.3614864864864865,
+    "hit@3": 0.581081081081081,
+    "hit@5": 0.652027027027027,
+    "hit@10": 0.7567567567567568,
+    "mrr@10": 0.4913717288717289,
+    "ndcg@10": 0.51498738684569,
+    "n_queries": 296,
+    "not_found": 12,
+    "vs_content_better": 0,
+    "vs_content_worse": 0,
+    "vs_step1_better": 0,
+    "vs_step1_worse": 0,
+    "hit@1_delta_vs_content_ci95": [
+     0.0,
+     0.0
+    ]
+   },
+   "content (base retriever)": {
+    "hit@1": 0.3614864864864865,
+    "hit@3": 0.581081081081081,
+    "hit@5": 0.652027027027027,
+    "hit@10": 0.7567567567567568,
+    "mrr@10": 0.4913717288717289,
+    "ndcg@10": 0.51498738684569,
+    "n_queries": 296,
+    "not_found": 12,
+    "vs_content_better": 0,
+    "vs_content_worse": 0,
+    "vs_step1_better": 0,
+    "vs_step1_worse": 0,
+    "hit@1_delta_vs_content_ci95": [
+     0.0,
+     0.0
+    ]
+   },
+   "A: LLM picks from 30 titles": {
+    "hit@1": 0.5202702702702703,
+    "hit@3": 0.7128378378378378,
+    "hit@5": 0.777027027027027,
+    "hit@10": 0.831081081081081,
+    "mrr@10": 0.6299938331188331,
+    "ndcg@10": 0.6415979061886623,
+    "n_queries": 296,
+    "not_found": 12,
+    "vs_content_better": 112,
+    "vs_content_worse": 30,
+    "vs_step1_better": 112,
+    "vs_step1_worse": 30,
+    "hit@1_delta_vs_content_ci95": [
+     0.108,
+     0.209
+    ]
+   },
+   "B: rewrite with title words, alone": {
+    "hit@1": 0.3581081081081081,
+    "hit@3": 0.5777027027027027,
+    "hit@5": 0.6587837837837838,
+    "hit@10": 0.7668918918918919,
+    "mrr@10": 0.49170554483054485,
+    "ndcg@10": 0.5247057751675491,
+    "n_queries": 296,
+    "not_found": 13,
+    "vs_content_better": 92,
+    "vs_content_worse": 92,
+    "vs_step1_better": 92,
+    "vs_step1_worse": 92,
+    "hit@1_delta_vs_content_ci95": [
+     -0.054,
+     0.047
+    ]
+   },
+   "B: original + rewrite (RRF)": {
+    "hit@1": 0.375,
+    "hit@3": 0.5945945945945946,
+    "hit@5": 0.6925675675675675,
+    "hit@10": 0.7837837837837838,
+    "mrr@10": 0.5095586658086657,
+    "ndcg@10": 0.53828632714412,
+    "n_queries": 296,
+    "not_found": 8,
+    "vs_content_better": 86,
+    "vs_content_worse": 52,
+    "vs_step1_better": 86,
+    "vs_step1_worse": 52,
+    "hit@1_delta_vs_content_ci95": [
+     -0.02,
+     0.047
+    ]
+   }
+  }
+ },
+ "agent_clean_150": {
+  "n": 150,
+  "gold_in_30_candidates": 0.94,
+  "bad_json": 0,
+  "variants": {
+   "content (original system)": {
+    "hit@1": 0.5266666666666666,
+    "hit@3": 0.7466666666666667,
+    "hit@5": 0.8066666666666666,
+    "hit@10": 0.8933333333333333,
+    "mrr@10": 0.649531746031746,
+    "ndcg@10": 0.708667650465695,
+    "n_queries": 150,
+    "not_found": 2,
+    "vs_content_better": 0,
+    "vs_content_worse": 0,
+    "vs_step1_better": 0,
+    "vs_step1_worse": 0,
+    "hit@1_delta_vs_content_ci95": [
+     0.0,
+     0.0
+    ]
+   },
+   "content (base retriever)": {
+    "hit@1": 0.5266666666666666,
+    "hit@3": 0.7466666666666667,
+    "hit@5": 0.8066666666666666,
+    "hit@10": 0.8933333333333333,
+    "mrr@10": 0.649531746031746,
+    "ndcg@10": 0.708667650465695,
+    "n_queries": 150,
+    "not_found": 2,
+    "vs_content_better": 0,
+    "vs_content_worse": 0,
+    "vs_step1_better": 0,
+    "vs_step1_worse": 0,
+    "hit@1_delta_vs_content_ci95": [
+     0.0,
+     0.0
+    ]
+   },
+   "A: LLM picks from 30 titles": {
+    "hit@1": 0.6533333333333333,
+    "hit@3": 0.82,
+    "hit@5": 0.8466666666666667,
+    "hit@10": 0.9133333333333333,
+    "mrr@10": 0.7418862433862434,
+    "ndcg@10": 0.7833646752489216,
+    "n_queries": 150,
+    "not_found": 2,
+    "vs_content_better": 40,
+    "vs_content_worse": 20,
+    "vs_step1_better": 40,
+    "vs_step1_worse": 20,
+    "hit@1_delta_vs_content_ci95": [
+     0.053,
+     0.2
+    ]
+   },
+   "B: rewrite with title words, alone": {
+    "hit@1": 0.5333333333333333,
+    "hit@3": 0.78,
+    "hit@5": 0.88,
+    "hit@10": 0.9266666666666666,
+    "mrr@10": 0.6741534391534392,
+    "ndcg@10": 0.7361777717741986,
+    "n_queries": 150,
+    "not_found": 2,
+    "vs_content_better": 44,
+    "vs_content_worse": 33,
+    "vs_step1_better": 44,
+    "vs_step1_worse": 33,
+    "hit@1_delta_vs_content_ci95": [
+     -0.08,
+     0.087
+    ]
+   },
+   "B: original + rewrite (RRF)": {
+    "hit@1": 0.5733333333333334,
+    "hit@3": 0.7933333333333333,
+    "hit@5": 0.8466666666666667,
+    "hit@10": 0.9066666666666666,
+    "mrr@10": 0.6928650793650794,
+    "ndcg@10": 0.7452532426075752,
+    "n_queries": 150,
+    "not_found": 0,
+    "vs_content_better": 35,
+    "vs_content_worse": 13,
+    "vs_step1_better": 35,
+    "vs_step1_worse": 13,
+    "hit@1_delta_vs_content_ci95": [
+     0.0,
+     0.1
+    ]
+   }
+  }
+ },
+ "ido_generated_300": {
+  "n": 300,
+  "gold_in_30_candidates": 0.9633333333333334,
+  "bad_json": 0,
+  "variants": {
+   "content (original system)": {
+    "hit@1": 0.5533333333333333,
+    "hit@3": 0.7433333333333333,
+    "hit@5": 0.7933333333333333,
+    "hit@10": 0.87,
+    "mrr@10": 0.6592830687830687,
+    "ndcg@10": 0.710349305570221,
+    "n_queries": 300,
+    "not_found": 4,
+    "vs_content_better": 0,
+    "vs_content_worse": 0,
+    "vs_step1_better": 0,
+    "vs_step1_worse": 0,
+    "hit@1_delta_vs_content_ci95": [
+     0.0,
+     0.0
+    ]
+   },
+   "content (base retriever)": {
+    "hit@1": 0.5533333333333333,
+    "hit@3": 0.7433333333333333,
+    "hit@5": 0.7933333333333333,
+    "hit@10": 0.87,
+    "mrr@10": 0.6592830687830687,
+    "ndcg@10": 0.710349305570221,
+    "n_queries": 300,
+    "not_found": 4,
+    "vs_content_better": 0,
+    "vs_content_worse": 0,
+    "vs_step1_better": 0,
+    "vs_step1_worse": 0,
+    "hit@1_delta_vs_content_ci95": [
+     0.0,
+     0.0
+    ]
+   },
+   "A: LLM picks from 30 titles": {
+    "hit@1": 0.6233333333333333,
+    "hit@3": 0.8,
+    "hit@5": 0.84,
+    "hit@10": 0.91,
+    "mrr@10": 0.7221415343915343,
+    "ndcg@10": 0.767824135024788,
+    "n_queries": 300,
+    "not_found": 4,
+    "vs_content_better": 76,
+    "vs_content_worse": 46,
+    "vs_step1_better": 76,
+    "vs_step1_worse": 46,
+    "hit@1_delta_vs_content_ci95": [
+     0.023,
+     0.117
+    ]
+   },
+   "B: rewrite with title words, alone": {
+    "hit@1": 0.53,
+    "hit@3": 0.73,
+    "hit@5": 0.7966666666666666,
+    "hit@10": 0.87,
+    "mrr@10": 0.6441878306878307,
+    "ndcg@10": 0.6989663942641035,
+    "n_queries": 300,
+    "not_found": 3,
+    "vs_content_better": 67,
+    "vs_content_worse": 79,
+    "vs_step1_better": 67,
+    "vs_step1_worse": 79,
+    "hit@1_delta_vs_content_ci95": [
+     -0.073,
+     0.023
+    ]
+   },
+   "B: original + rewrite (RRF)": {
+    "hit@1": 0.5566666666666666,
+    "hit@3": 0.7566666666666667,
+    "hit@5": 0.8066666666666666,
+    "hit@10": 0.8966666666666666,
+    "mrr@10": 0.6706679894179894,
+    "ndcg@10": 0.7251659093015258,
+    "n_queries": 300,
+    "not_found": 3,
+    "vs_content_better": 55,
+    "vs_content_worse": 42,
+    "vs_step1_better": 55,
+    "vs_step1_worse": 42,
+    "hit@1_delta_vs_content_ci95": [
+     -0.02,
+     0.027
+    ]
+   }
+  }
+ },
+ "_llm": {
+  "model": "gpt-4o-mini",
+  "new_calls_prompt_tokens": 1067278,
+  "new_calls_completion_tokens": 32737,
+  "new_calls_cost_usd": 0.1797,
+  "median_call_seconds": 0.77
+ }
+}

@@ -1,8 +1,4 @@
 $ PYTHONPATH=app/src:../Webiks-Hebrew-RAGbot DOCUMENT_DEFINITION_CONFIG=app/src/doc-config.json pytest tests -q
-_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
->   ???
-E   AttributeError: partially initialized module 'pandas' has no attribute '_pandas_datetime_CAPI' (most likely due to a circular import)
-missing.pyx:40: AttributeError
 =========================== short test summary info ============================
 ERROR tests/test_main.py::test_healthcheck - AttributeError: 'str' object has...
 ERROR tests/test_main.py::test_get_conf - AttributeError: partially initializ...
@@ -10,8 +6,30 @@ ERROR tests/test_main.py::test_set_conf - AttributeError: partially initializ...
 ERROR tests/test_main.py::test_search - AttributeError: partially initialized...
 ERROR tests/test_main.py::test_operate_docs - AttributeError: partially initi...
 ERROR tests/test_main.py::test_operate_docs_error - AttributeError: partially...
-41 passed, 6 errors in 1.84s
+60 passed, 6 errors in 2.08s
+
+$ pytest tests/test_title_rerank.py -v   # new: optional title rerank stage + LLM factory
+test_parse_json_reply PASSED
+test_parse_drops_out_of_range_duplicates_and_junk PASSED
+test_parse_tolerates_prose_and_bare_numbers PASSED
+test_parse_empty_or_garbage PASSED
+test_parse_caps_picks PASSED
+test_rerank_moves_picked_pages_first_and_keeps_the_rest_in_order PASSED
+test_rerank_sends_numbered_titles PASSED
+test_rerank_falls_back_on_llm_error PASSED
+test_rerank_falls_back_on_unparsable_reply PASSED
+test_rerank_skips_the_call_for_fewer_than_two_pages PASSED
+test_wrapper_dedupes_pages_reranks_and_cuts_to_top_k PASSED
+test_wrapper_respects_candidate_limit PASSED
+test_wrapper_delegates_everything_else PASSED
+test_disabled_by_default_returns_the_same_engine_object PASSED
+test_enabled_from_env_with_a_registered_provider PASSED
+test_factory_rejects_unknown_provider_and_lists_known_ones PASSED
+test_factory_requires_a_model_name PASSED
+test_builtin_providers_registered PASSED
+test_openai_provider_builds_the_request_without_network PASSED
+19 passed in 0.16s
 
 $ pytest ../Webiks-Hebrew-RAGbot/tests/test_embed_context.py -q
 ........                                                                 [100%]
-8 passed in 1.29s
+8 passed in 1.30s

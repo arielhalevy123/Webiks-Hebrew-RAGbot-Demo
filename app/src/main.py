@@ -16,6 +16,7 @@ import saved_config
 from gpt_client import llms_client_factory
 from logger import setup_logging
 from updater_service import updater_factory
+from title_rerank import maybe_enable_title_rerank
 
 setup_logging()
 es_client = get_es_client.factory()
@@ -24,6 +25,9 @@ configs = saved_config.factory(es_client)
 gpt_client = llms_client_factory(configs)
 engine = engine_factory(gpt_client, es_client)
 updater_service = updater_factory(es_client, engine)
+# Optional second retrieval stage (LLM reorders candidate pages by title). OFF unless TITLE_RERANK_ENABLED=true;
+# when off this returns the same engine object. See title_rerank.py and SUBMISSION.md for how to enable it.
+engine = maybe_enable_title_rerank(engine)
 interactions_model = interactions_model.factory(es_client)
 
 origins = ['http://localhost:5000']
