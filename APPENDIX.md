@@ -71,6 +71,18 @@ table share query vectors. **Shipped as an optional stage, off by default** (`ap
 mock mode), two of the three sets are LLM-written, and it is a second direction on top of the one the
 brief asks for. Verified end to end on a second backend instance (`docs/screenshots/06`, `07`).
 
+**Experiment 8 (Ariel's idea): grounded multi-query.** The LLM sees the question and the base
+retriever's top pages (30 titles, or 20 titles with a 300-character snippet each), writes 3 rewrites
+using their terms, each rewrite is searched, and the original + rewrites are fused by RRF
+(`retrieval_eval/grounded_multiquery.py`, $0.47, median 1.5 s per call). hit@1 vs title in text:
+vendor .463 → .466–.493, agent .600 → .587–.627, IdoAgai .537 → .540–.573; hit@5/hit@10 rise more
+(vendor hit@10 .821 → .868); every hit@1 CI includes zero. Diagnosis on the vendor set: one rewrite's
+search alone puts the right page first 45.0% of the time (base 46.3%), the best of the three would
+60.8% (≈ A's 60.1%), but the fused result is 46.6%. The three rewrites lean toward different
+candidates (in 37% of questions they borrow words from the top wrong sibling's title), so the votes
+split and fusion falls back to the original order. The information is there; turning it back into a
+query vector and voting loses it, whereas A takes the LLM's judgement directly. Not shipped.
+
 **Integration fix found while switching.** `retrieval_eval/fast_index.py`, which §5 of the submission
 used for indexing, defaulted to embedding `content` only and never read `doc-config.json`; following the
 04.10 instructions literally produced the original system's vectors. It now derives the representation
