@@ -1,0 +1,9 @@
+$ python retrieval_eval/title_llm.py   # hit@1 / hit@3 / MRR@10; within a set every row uses the same query vectors
+
+                                                 vendor held-out 296           agent clean 150     IdoAgai generated 300
+content only (original system)                 0.361 / 0.581 / 0.491     0.527 / 0.747 / 0.650     0.553 / 0.743 / 0.659
+title in text  (SHIPPED)                       0.463 / 0.645 / 0.577     0.600 / 0.787 / 0.711     0.537 / 0.757 / 0.663
+rerank only, on the original index             0.520 / 0.713 / 0.630     0.653 / 0.820 / 0.742     0.623 / 0.800 / 0.722
+title in text + LLM title rerank (OFF)         0.601 / 0.753 / 0.692     0.667 / 0.840 / 0.757     0.607 / 0.773 / 0.706
+
++ separate title vector w=0.3 (not shipped)     0.527 / 0.709 / 0.636     0.560 / 0.773 / 0.675     0.543 / 0.730 / 0.649   (eval_retrieval.py)

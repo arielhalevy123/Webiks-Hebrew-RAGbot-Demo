@@ -18,7 +18,10 @@ overridden with `RAG_DATA_DIR`, `RAG_RESULTS_DIR`, `RAG_MODEL_DIR`, `RAG_TRAINER
 | `gen_context.py` | write a 1–2 sentence context per paragraph with gpt-4o-mini for the `ctx_title_content` variant (experiment 4, rejected); output `data/llm_context.jsonl`, a gzipped copy is in `results/` |
 | `query_rewrite.py` | query-side LLM variants: rewrite, hypothetical answer (HyDE), concatenations (experiment 5, not shipped) |
 | `multiquery.py` | 4 paraphrases per question, searched separately, pages fused by reciprocal rank (experiment 6, not shipped) |
-| `fast_index.py --corpus ... [--emb-dir data/emb --embed-field title_content]` | bulk-loads Elasticsearch with the same documents `/initialize_elastic_from_json` would create, from cached vectors in ~20 s or by batched encoding in minutes; vectors verified identical to the Demo path |
+| `fast_index.py --corpus ... [--config app/src/doc-config.json] [--emb-dir data/emb] [--embed-field ...]` | bulk-loads Elasticsearch with the same documents `/initialize_elastic_from_json` would create; by default follows `doc-config.json` (title prepending, optional fused title vector) exactly like `Engine.embed_document`; from cached vectors in ~20 s or by batched encoding in minutes |
+| `title_llm.py` | experiment 7: gpt-4o-mini orders the base retriever's top-30 candidate titles (A) or rewrites the question with title terms (B), on the three eval sets; `TITLE_LLM_BASE=content\|title_content`; cached outputs in `results/title_llm/` |
+| `fetch_idoagai_set.py` | downloads IdoAgai's public 300-question generated set into `data/eval_sets/` (not republished here) |
+| `eval_sets/agent_clean_150/` | the agent-written clean set: 150 questions on pages absent from the QA file, written with the page title hidden; method note and scripts |
 
 Inputs expected in `data/`: `paragraph_corpus.json` (Kol-Zchut paragraph corpus) and
 `Webiks_Hebrew_RAGbot_KolZchut_QA_Training_DataSet_v0.1.csv` (QA set). Both are linked from
@@ -34,15 +37,18 @@ python retrieval_eval/eval_retrieval.py --variant title_content
 python retrieval_eval/compare_runs.py results/content__heldout.json results/title_content__heldout.json
 ```
 
-Shipped variant and the full QA file:
+Shipped variant (title in text), the clean sets and the full QA file:
 
 ```bash
-python retrieval_eval/build_fused.py --base title_content --w 0.3     # writes data/emb/fused_w0.3.npy (title_fusion.py is the weight sweep)
-python retrieval_eval/eval_retrieval.py --variant fused_w0.3 --eval-set heldout   # 296 questions (seed-42 split)
-python retrieval_eval/eval_retrieval.py --variant fused_w0.3 --eval-set all       # all 2,951 questions
-python retrieval_eval/compare_runs.py results/content__heldout.json results/fused_w0.3__heldout.json
-python retrieval_eval/error_table.py results/fused_w0.3__heldout.json
+python retrieval_eval/eval_retrieval.py --variant title_content --eval-set heldout   # 296 questions (seed-42 split)
+python retrieval_eval/eval_retrieval.py --variant title_content --eval-set all       # all 2,951 questions
+python retrieval_eval/eval_retrieval.py --variant title_content --eval-set retrieval_eval/eval_sets/agent_clean_150/agent_questions.csv
+python retrieval_eval/fetch_idoagai_set.py && python retrieval_eval/eval_retrieval.py --variant title_content --eval-set data/eval_sets/idoagai_generated_300.csv
+python retrieval_eval/compare_runs.py results/content__heldout.json results/title_content__heldout.json
+python retrieval_eval/error_table.py results/title_content__heldout.json
+python retrieval_eval/build_fused.py --base title_content --w 0.3     # the not-shipped title-vector variant (title_fusion.py = weight sweep)
+TITLE_LLM_BASE=title_content python retrieval_eval/title_llm.py      # the optional LLM title rerank (needs OAI_API_KEY; cached outputs make re-runs free)
 ```
 
 Tests: `PYTHONPATH=app/src DOCUMENT_DEFINITION_CONFIG=app/src/doc-config.json pytest tests -q`
-(needs `pytest-mock`; 41 pass, the 6 `test_main.py` errors are identical on upstream).
+(needs `pytest-mock`; 60 pass including 19 for the optional rerank stage and LLM factory; the 6 `test_main.py` errors are identical on upstream).
