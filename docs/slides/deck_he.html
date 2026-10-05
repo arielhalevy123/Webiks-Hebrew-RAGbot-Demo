@@ -37,14 +37,14 @@ h1{font-size:34px;line-height:1.15;color:var(--ink)}
 .r{display:flex;gap:10px;align-items:center;font-size:19px}
 .r b{display:inline-block;width:26px;height:26px;border-radius:50%;background:var(--blue);color:#fff;text-align:center;line-height:26px;font-size:14px}
 .r.ok b{background:var(--green)} .r.bad{color:var(--muted)}
-.big{font-size:42px;font-weight:800;color:var(--orange);line-height:1}
+.big{font-size:42px;font-weight:800;color:var(--blue);line-height:1}
 .stat{display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;gap:6px;flex:1}
 .mono{font-family:Menlo,Consolas,monospace;direction:ltr;unicode-bidi:plaintext;text-align:left}
 .titleline{display:block;border:2px dashed var(--orange);background:var(--orange-soft);border-radius:6px;padding:3px 8px;margin-bottom:5px;font-weight:800;color:var(--orange)}
 .flow{display:flex;gap:8px;align-items:stretch}
 .flow .st{flex:1;border:2px solid var(--blue);background:var(--blue-soft);border-radius:10px;padding:8px;text-align:center;font-size:14px;line-height:1.35;display:flex;flex-direction:column;justify-content:center}
-.flow .st.on{border-color:var(--orange);background:var(--orange-soft)}
-.flow .st.opt{border:2px dashed var(--muted);background:#fff;color:var(--muted)}
+.flow .st.on{border:3px solid var(--blue);background:#d6e2f0}
+.flow .st.opt{border:2px dashed #7a8696;background:#f4f6f8;color:#5b6b80}
 .flow .st b{color:var(--blue);font-size:15px}
 .flow .a{align-self:center;color:var(--orange);font-weight:800;font-size:20px}
 table{border-collapse:collapse;width:100%;font-size:14px}
@@ -56,6 +56,11 @@ td.n{direction:ltr;unicode-bidi:isolate;text-align:center;white-space:nowrap}
 .knob::after{content:"";position:absolute;top:3px;right:3px;width:18px;height:18px;border-radius:50%;background:#fff}
 .legend{display:flex;gap:16px;font-size:14px;color:var(--muted);justify-content:center}
 .legend span::before{content:"";display:inline-block;width:14px;height:14px;border-radius:3px;margin-left:6px;vertical-align:-2px;background:var(--c)}
+.card.n{border-color:#b9c2cd;background:#f4f6f8}
+.chip.n{border:2px dashed #7a8696;background:#f4f6f8;color:#5b6b80}
+.titleline small{font-weight:600;font-size:13px;color:var(--orange);margin-inline-start:8px}
+.colorkey{display:flex;gap:22px;justify-content:center;font-size:15px;color:var(--ink)}
+.colorkey i{display:inline-block;width:16px;height:12px;border-radius:3px;vertical-align:-1px;margin-inline-end:6px}
 </style>
 </head>
 <body>
@@ -70,7 +75,7 @@ td.n{direction:ltr;unicode-bidi:isolate;text-align:center;white-space:nowrap}
   <span class="chip">1. תצפית: קראתי את הכשלים</span><span class="arrow">←</span>
   <span class="chip">2. השערה: אחים נבדלים רק בכותרת</span><span class="arrow">←</span>
   <span class="chip">3. בדיקה בקוד: מוטמע רק content</span><span class="arrow">←</span>
-  <span class="chip o">4. אימות במספרים</span>
+  <span class="chip">4. אימות במספרים</span>
 </div>
 
 <div class="row" style="flex:1">
@@ -101,7 +106,7 @@ td.n{direction:ltr;unicode-bidi:isolate;text-align:center;white-space:nowrap}
   </div>
 
   <!-- numbers -->
-  <div class="card o" style="flex:0.95;display:flex;flex-direction:column;gap:10px">
+  <div class="card" style="flex:0.95;display:flex;flex-direction:column;gap:10px">
     <h3>המצב ההתחלתי, 296 שאלות</h3>
     <div class="row" style="gap:10px">
       <div class="stat"><div class="big">37%</div><div class="small">העמוד הנכון ראשון</div></div>
@@ -119,12 +124,13 @@ td.n{direction:ltr;unicode-bidi:isolate;text-align:center;white-space:nowrap}
 <section class="slide">
 <div class="top"></div>
 <div><h1>הפתרון: הכותרת נכנסת לטקסט שמוטמע</h1>
-<div class="kicker">מפתח אחד בקובץ ההגדרות · המודל לא אומן מחדש · החיפוש, ה-API והממשק לא השתנו</div></div>
+<div class="kicker">מפתח אחד בקובץ ההגדרות · המודל לא אומן מחדש · החיפוש, ה-API והממשק לא השתנו</div>
+<div class="colorkey" style="justify-content:flex-start;margin-top:6px"><span><i style="background:#fbe9df;border:2px dashed #d9742f"></i>כתום: כותרת העמוד</span><span><i style="background:#3d5a80"></i>כחול: מה שנשלח</span><span><i style="background:#f4f6f8;border:2px dashed #7a8696"></i>אפור מקווקו: אופציונלי, כבוי</span></div></div>
 
 <div class="row">
   <div class="card" style="flex:1"><h3>לפני</h3><div class="t">נכים עשויים לקבל מהרשות המקומית הנחה בתשלומי הארנונה בהתאם לתנאים...</div></div>
   <div class="arrow" style="align-self:center">←</div>
-  <div class="card b" style="flex:1.15"><h3>אחרי</h3><div class="t"><span class="titleline">הנחה בארנונה לנכים</span>נכים עשויים לקבל מהרשות המקומית הנחה בתשלומי הארנונה...</div></div>
+  <div class="card b" style="flex:1.15"><h3>אחרי</h3><div class="t"><span class="titleline">הנחה בארנונה לנכים<small>← הכותרת שנוספה</small></span>נכים עשויים לקבל מהרשות המקומית הנחה בתשלומי הארנונה...</div></div>
   <div class="arrow" style="align-self:center">←</div>
   <div class="card" style="flex:0.75;display:flex;flex-direction:column;justify-content:center"><h3>וקטור אחד לפסקה</h3><div class="small">כמו קודם, באותו שדה ובאותו מבנה. רק התוכן שלו יודע עכשיו לאיזה עמוד הוא שייך.</div></div>
 </div>
@@ -139,21 +145,21 @@ td.n{direction:ltr;unicode-bidi:isolate;text-align:center;white-space:nowrap}
         <!-- group 1: vendor -->
         <rect x="40"  y="114" width="44" height="76" fill="#a9b4c2"/><text x="62"  y="108">37</text>
         <rect x="90"  y="94"  width="44" height="96" fill="#3d5a80"/><text x="112" y="88" font-weight="700">46</text>
-        <rect x="140" y="65"  width="44" height="125" fill="#fbe9df" stroke="#d9742f" stroke-width="2" stroke-dasharray="5 4"/><text x="162" y="59">60</text>
+        <rect x="140" y="65"  width="44" height="125" fill="#f4f6f8" stroke="#7a8696" stroke-width="2" stroke-dasharray="5 4"/><text x="162" y="59" fill="#5b6b80">60</text>
         <text x="112" y="212" font-size="14" fill="#1b2a41">Webiks, 296</text>
         <!-- group 2: clean -->
         <rect x="230" y="79"  width="44" height="111" fill="#a9b4c2"/><text x="252" y="73">53</text>
         <rect x="280" y="65"  width="44" height="125" fill="#3d5a80"/><text x="302" y="59" font-weight="700">60</text>
-        <rect x="330" y="51"  width="44" height="139" fill="#fbe9df" stroke="#d9742f" stroke-width="2" stroke-dasharray="5 4"/><text x="352" y="45">67</text>
+        <rect x="330" y="51"  width="44" height="139" fill="#f4f6f8" stroke="#7a8696" stroke-width="2" stroke-dasharray="5 4"/><text x="352" y="45" fill="#5b6b80">67</text>
         <text x="302" y="212" font-size="14" fill="#1b2a41">נקי, 150</text>
         <!-- group 3: public -->
         <rect x="420" y="75"  width="44" height="115" fill="#a9b4c2"/><text x="442" y="69">55</text>
         <rect x="470" y="78"  width="44" height="112" fill="#3d5a80"/><text x="492" y="72" font-weight="700">54</text>
-        <rect x="520" y="64"  width="44" height="126" fill="#fbe9df" stroke="#d9742f" stroke-width="2" stroke-dasharray="5 4"/><text x="542" y="58">61</text>
+        <rect x="520" y="64"  width="44" height="126" fill="#f4f6f8" stroke="#7a8696" stroke-width="2" stroke-dasharray="5 4"/><text x="542" y="58" fill="#5b6b80">61</text>
         <text x="492" y="212" font-size="14" fill="#1b2a41">ציבורי, 300</text>
       </g>
     </svg>
-    <div class="legend"><span style="--c:#a9b4c2">המערכת המקורית</span><span style="--c:#3d5a80">הכותרת בטקסט (נשלח)</span><span style="--c:#fbe9df;outline:2px dashed #d9742f">+ השלב האופציונלי (כבוי)</span></div>
+    <div class="legend"><span style="--c:#a9b4c2">המערכת המקורית</span><span style="--c:#3d5a80">הכותרת בטקסט (נשלח)</span><span style="--c:#f4f6f8;outline:2px dashed #7a8696">+ שלב אופציונלי (כבוי)</span></div>
   </div>
   <div style="flex:1;display:flex;flex-direction:column;gap:12px">
     <div class="card g">
@@ -164,7 +170,7 @@ td.n{direction:ltr;unicode-bidi:isolate;text-align:center;white-space:nowrap}
       <h3>ברמת השאלה</h3>
       <div class="t" style="font-size:15px">Webiks: 114 השתפרו, 47 נפגעו, ושלושת הראשונים עלו מ-58% ל-65%. נקי: 38 מול 19. על הסט הציבורי ההפרש בתוך הרעש: הכותרת עוזרת כשהשאלה מזכירה אוכלוסייה או תת-מקרה.</div>
     </div>
-    <div class="card o">
+    <div class="card n">
       <h3>נבדק וכובה: וקטור כותרת נפרד במשקל 0.3</h3>
       <div class="t" style="font-size:15px">על סט Webiks נתן 53%, אבל בשני הסטים הנקיים החזיר את הרווח. הוא כבוי ונשאר בקוד כאופציה.</div>
     </div>
@@ -192,7 +198,7 @@ td.n{direction:ltr;unicode-bidi:isolate;text-align:center;white-space:nowrap}
   <div class="card g" style="flex:1.1;display:flex;flex-direction:column;gap:8px">
     <h3>LLM factory: כל מודל שרוצים</h3>
     <div class="chips" style="flex-wrap:wrap;gap:8px">
-      <span class="chip">OpenAI</span><span class="chip">Azure</span><span class="chip">Ollama</span><span class="chip">vLLM</span><span class="chip">Anthropic</span><span class="chip">Gemini</span><span class="chip o">+ מודל משלכם</span>
+      <span class="chip">OpenAI</span><span class="chip">Azure</span><span class="chip">Ollama</span><span class="chip">vLLM</span><span class="chip">Anthropic</span><span class="chip">Gemini</span><span class="chip n">+ מודל משלכם</span>
     </div>
     <div class="t" style="font-size:15px">ממשק אחד: הודעות נכנסות, טקסט יוצא. מודל חדש הוא מחלקה קטנה שנרשמת בשם.</div>
     <div class="switch"><span class="knob"></span> כבוי כברירת מחדל. להדלקה, ב-app/.env:</div>
