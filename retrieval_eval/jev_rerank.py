@@ -1,27 +1,26 @@
 #!/usr/bin/env python3
-"""Experiment 8 (07.10): TypeSafe Jev as the optional second-stage rerank, vs the gpt-4o-mini title pick.
+"""Experiment 9 (07.10): TypeSafe Jev as the optional second-stage rerank, vs the gpt-4o-mini title pick.
 
 Candidates, base ranking and evaluator are exactly those of title_llm.py (base retriever title_content,
 top-30 pages per question, ranked by best paragraph), so the baselines match that script to the digit.
 
-Pattern (TypeSafe re-ranking cookbook, docs.typesafe.ai/cookbooks/rerank_typesafe): one Noul question per
-(question, candidate) pair, state = {question, candidate}; the shortlist is sorted by the returned noul
-(probability of "yes"), highest first. Ties and unscored questions keep retrieval order (stable sort).
-Every pair is scored independently, so there is no position bias and no shared context limit; the only
-limit is 32k tokens of state per call, which every paragraph in the corpus fits (longest ~23k tokens).
+Pattern: one Jev Choice question per user question. State = {question}; the options are the 30 candidate
+page titles in retrieval order (a duplicate title gets its doc id appended). Jev returns a probability per
+option and the shortlist is sorted by it, highest first; ties and zero-probability pages keep retrieval
+order (stable sort), and a failed call keeps the plain retrieval order.
 
-Variants (all on the same 30 candidates):
-  J1  title only (direct analogue of the gpt-4o-mini pick)
-  J2  title + the page's best-matching paragraph, truncated to ~300 Jev tokens (~365 Hebrew characters)
-  J3  title + the page's best-matching paragraph, full text (all 30 candidates)
+Variants (both on the same 30 candidates, one call per question):
+  C1  options are the titles only (direct analogue of the gpt-4o-mini pick; this is what app/src ships)
+  C2  each option also carries the start of the page's best-matching paragraph, ~150 Jev tokens
 "Best-matching paragraph" = the paragraph that gave the page its rank in the base retriever.
 
 Sets: vendor held-out 296 and agent_clean_150 only (IdoAgai's public set is deliberately not sent).
 Every Jev response is cached in $RAG_DATA_DIR/jev_rerank_calls.jsonl keyed by a hash of the exact request
-(no corpus text is stored), so re-runs are free and deterministic. gpt-4o-mini picks are read from
+(a record holds the question and one probability for each candidate title, no page text), so re-runs are free
+and deterministic; a committed copy is in results/jev_rerank/*.jsonl.gz. gpt-4o-mini picks are read from
 title_llm.py's cache; no OpenAI call is made.
 
-Run from the Demo checkout:  RAG_DATA_DIR=../data python retrieval_eval/jev_rerank.py [--limit N] [--variants J1,J2,J3]
+Run from the Demo checkout:  RAG_DATA_DIR=../data python retrieval_eval/jev_rerank.py [--limit N] [--variants C1,C2]
 """
 import argparse, hashlib, json, os, re, sys, threading, time
 from concurrent.futures import ThreadPoolExecutor
@@ -38,22 +37,13 @@ URL = "https://api.typesafe.ai/v1/systemone"
 JEV = "jev-latest"
 PRICE_PER_MTOK = 0.042          # input only; output tokens are free (docs.typesafe.ai/models)
 BUDGET_USD = 5.0
-J2_CHARS = 365                  # ~300 Jev tokens: Hebrew measured at ~0.82 tokens per character
 C2_CHARS = 180                  # ~150 Jev tokens per option snippet
 CALLS = os.path.join(DATA, "jev_rerank_calls.jsonl")
 QLAT = os.path.join(DATA, "jev_rerank_qlat.jsonl")
 OUT = os.path.join(REPO, "results", "jev_rerank")
 MAX_RPS, MAX_TPS = 60, 70_000   # below the documented 80 req/s and 100k tok/s
 
-INSTR = {
-    "J1": ("The state holds a question a member of the public asked (in Hebrew) and one candidate page from "
-           "Kol-Zchut, the Israeli rights-information website, given by its title. "
-           "Is this the page that answers the question?"),
-    "J2": ("The state holds a question a member of the public asked (in Hebrew) and one candidate page from "
-           "Kol-Zchut, the Israeli rights-information website: its title and the start of the page paragraph "
-           "that best matches the question. Is this the page that answers the question?"),
-}
-INSTR["J3"] = INSTR["J2"].replace("the start of the page paragraph", "the page paragraph")
+INSTR = {}
 INSTR["C1"] = ("The state holds a question a member of the public asked (in Hebrew). Each option is a candidate page "
                "from Kol-Zchut, the Israeli rights-information website, named by its page title. Which page answers "
                "the question? Choose the page about the specific right, benefit, procedure or situation the question "
@@ -61,13 +51,6 @@ INSTR["C1"] = ("The state holds a question a member of the public asked (in Hebr
                "status, the specific circumstance), rather than a page on a related or broader topic.")
 INSTR["C2"] = INSTR["C1"].replace("named by its page title.", "named by its page title and described by the start "
                                   "of the page paragraph that best matches the question.")
-CRITERIA = {
-    "true": ("The page is about the specific right, benefit, procedure or situation the question asks about, "
-             "and fits the population and sub-case the question describes (who the person is, their status, "
-             "the specific circumstance)."),
-    "false": ("The page is only on a related or broader topic, covers a different population or sub-case, "
-              "or would not answer the question."),
-}
 
 
 def clean(p):
@@ -95,24 +78,12 @@ def choice_body(variant, q, cand_docs, title_of, para_of):
     return body, key2doc
 
 
-def request_body(variant, q, title, para):
-    state = {"question": q, "page_title": title}
-    if variant == "J2":
-        state["page_paragraph_start"] = truncate(para, J2_CHARS)
-    elif variant == "J3":
-        state["page_paragraph"] = para
-    return {"model": JEV, "state": state,
-            "questions": {"answers_question": {"type": "noul", "instructions": INSTR[variant], "criteria": CRITERIA}}}
-
-
 def body_key(variant, body):
     return variant + ":" + hashlib.sha256(json.dumps(body, ensure_ascii=False, sort_keys=True).encode()).hexdigest()[:24]
 
 
 def est_tokens(body):
-    if body["questions"].get("answering_page"):
-        return int(0.85 * len(json.dumps(body, ensure_ascii=False))) + 330
-    return int(0.85 * len(json.dumps(body["state"], ensure_ascii=False))) + 330
+    return int(0.85 * len(json.dumps(body, ensure_ascii=False))) + 330
 
 
 class Limiter:
@@ -144,10 +115,12 @@ def boot_ci(a, b, n=10000, seed=0):
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--limit", type=int, default=0, help="first N questions per set (smoke test)")
-    ap.add_argument("--variants", default="J1,J2,J3,C1,C2")
+    ap.add_argument("--variants", default="C1,C2")
     ap.add_argument("--dry-run", action="store_true", help="estimate tokens and cost, call nothing")
     args = ap.parse_args()
     variants = args.variants.split(",")
+    if not set(variants) <= set(INSTR):
+        raise SystemExit(f"unknown variant(s); choose from {sorted(INSTR)}")
     key = os.environ.get("TYPESAFE_API_KEY")
     if not key and not args.dry_run:
         raise SystemExit("TYPESAFE_API_KEY not set (expected in app/.env)")
@@ -199,8 +172,8 @@ def main():
                 if r.status_code != 200:
                     break                            # 4xx other than 429: do not retry
                 js = r.json()
-                ans = js["answers"].get("answers_question") or js["answers"]["answering_page"]
-                rec = {"key": k, "variant": variant, "q": q, "doc_id": dd, "noul": ans.get("noul"), "probs": ans.get("probabilities"),
+                ans = js["answers"]["answering_page"]
+                rec = {"key": k, "variant": variant, "q": q, "doc_id": dd, "probs": ans.get("probabilities"),
                        "in": js["usage"]["input_tokens"], "out": js["usage"]["output_tokens"], "sec": sec, "model": js["model"]}
                 with lock:
                     cache[k] = rec; spent["in"] += rec["in"]; spent["out"] += rec["out"]; spent["calls"] += 1
@@ -212,9 +185,10 @@ def main():
             spent["failed_calls"] += 1
         return None
 
-    pool = ThreadPoolExecutor(max_workers=N_CAND)
-    report = {"_config": {"jev_model_alias": JEV, "pattern": "one Noul per (question, candidate) pair, sort by noul desc, stable",
-                          "instructions": INSTR, "criteria": CRITERIA, "j2_chars": J2_CHARS, "n_candidates": N_CAND,
+    pool = ThreadPoolExecutor(max_workers=4)
+    report = {"_config": {"jev_model_alias": JEV,
+                          "pattern": "one Choice per question over the candidate titles, sort by probability desc, stable",
+                          "instructions": {v: INSTR[v] for v in variants}, "c2_chars": C2_CHARS, "n_candidates": N_CAND,
                           "base": BASE, "limit": args.limit}}
     projected_total = 0.0
     for set_name in USE_SETS:
@@ -232,13 +206,10 @@ def main():
                 best_para[(q, dd)] = clean(d["content"][keys[pi[int(np.argmax(s[pi]))]]])
         bodies, key2doc = {}, {}
         for v in variants:
-            if v.startswith("C"):
-                bodies[v] = {}
-                for q in qs:
-                    b, k2d = choice_body(v, q, cands[q], title_of, lambda dd: best_para[(q, dd)])
-                    bodies[v][q] = [(None, b)]; key2doc[(v, q)] = k2d
-            else:
-                bodies[v] = {q: [(dd, request_body(v, q, title_of[dd], best_para[(q, dd)])) for dd in cands[q]] for q in qs}
+            bodies[v] = {}
+            for q in qs:
+                b, k2d = choice_body(v, q, cands[q], title_of, lambda dd: best_para[(q, dd)])
+                bodies[v][q] = [(None, b)]; key2doc[(v, q)] = k2d
 
         # cost guard: estimate the uncached part of this set before calling anything
         est = sum(est_tokens(b) for v in variants for q in qs for _, b in bodies[v][q] if body_key(v, b) not in cache)
@@ -271,14 +242,11 @@ def main():
                 if not all(recs):
                     fallbacks[v] += 1; jev_rank[v].append(base_rank[i]); continue
                 toks[v] += sum(r["in"] for r in recs)
-                if v.startswith("C"):
-                    probs, k2d = recs[0]["probs"] or {}, key2doc[(v, q)]
-                    sc = {k2d[k]: float(p) for k, p in probs.items() if k in k2d}
-                    if len(sc) < len(k2d):
-                        missing_opts[v] += len(k2d) - len(sc)
-                    scores = [sc.get(dd, 0.0) for dd in cands[q]]; docs = cands[q]
-                else:
-                    scores = [r["noul"] for r in recs]; docs = [it[0] for it in items]
+                probs, k2d = recs[0]["probs"] or {}, key2doc[(v, q)]
+                sc = {k2d[k]: float(p) for k, p in probs.items() if k in k2d}
+                if len(sc) < len(k2d):
+                    missing_opts[v] += len(k2d) - len(sc)
+                scores = [sc.get(dd, 0.0) for dd in cands[q]]; docs = cands[q]
                 order = sorted(range(len(docs)), key=lambda j: -scores[j])     # stable: ties keep retrieval order
                 top = scores[order[0]]
                 ties_top[v] += sum(1 for x in scores if x == top) > 1
@@ -307,8 +275,7 @@ def main():
                     pass
             gpt_rank.append(picked + [dd for dd in base_rank[i] if dd not in picked])
         runs = {"base (title_content, step 1)": base_rank, "gpt-4o-mini title pick": gpt_rank}
-        names = {"J1": "J1 Jev: title only", "J2": "J2 Jev: title + paragraph ~300 tok", "J3": "J3 Jev: title + full paragraph",
-                 "C1": "C1 Jev Choice: 30 titles", "C2": "C2 Jev Choice: 30 titles + ~150 tok snippet"}
+        names = {"C1": "C1 Jev Choice: 30 titles", "C2": "C2 Jev Choice: 30 titles + ~150 tok snippet"}
         for v in variants:
             runs[names[v]] = jev_rank[v]
         per = {name: [] for name in runs}
