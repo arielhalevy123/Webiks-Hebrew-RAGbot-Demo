@@ -1,0 +1,449 @@
+{
+ "_config": {
+  "jev_model_alias": "jev-latest",
+  "pattern": "one Noul per (question, candidate) pair, sort by noul desc, stable",
+  "instructions": {
+   "J1": "The state holds a question a member of the public asked (in Hebrew) and one candidate page from Kol-Zchut, the Israeli rights-information website, given by its title. Is this the page that answers the question?",
+   "J2": "The state holds a question a member of the public asked (in Hebrew) and one candidate page from Kol-Zchut, the Israeli rights-information website: its title and the start of the page paragraph that best matches the question. Is this the page that answers the question?",
+   "J3": "The state holds a question a member of the public asked (in Hebrew) and one candidate page from Kol-Zchut, the Israeli rights-information website: its title and the page paragraph that best matches the question. Is this the page that answers the question?"
+  },
+  "criteria": {
+   "true": "The page is about the specific right, benefit, procedure or situation the question asks about, and fits the population and sub-case the question describes (who the person is, their status, the specific circumstance).",
+   "false": "The page is only on a related or broader topic, covers a different population or sub-case, or would not answer the question."
+  },
+  "j2_chars": 365,
+  "n_candidates": 30,
+  "base": "title_content",
+  "limit": 0
+ },
+ "vendor_heldout_296": {
+  "n": 296,
+  "gold_in_30_candidates": 0.8986486486486487,
+  "gpt_cache_missing": 0,
+  "gpt_cache_candidate_mismatch": 0,
+  "gpt_latency_sec": {
+   "median": 0.7344999999999999,
+   "p90": 0.9155,
+   "note": "single call, measured 05.10 by title_llm.py"
+  },
+  "variants": {
+   "base (title_content, step 1)": {
+    "hit@1": 0.46283783783783783,
+    "hit@3": 0.6452702702702703,
+    "hit@5": 0.7195945945945946,
+    "hit@10": 0.8209459459459459,
+    "mrr@10": 0.5768822393822394,
+    "ndcg@10": 0.5981842823704223,
+    "n_queries": 296,
+    "not_found": 7,
+    "vs_step1_better": 0,
+    "vs_step1_worse": 0,
+    "vs_gpt_better": 23,
+    "vs_gpt_worse": 96,
+    "hit@3_delta_vs_gpt_mean_ci95": [
+     -0.1081,
+     -0.1554,
+     -0.0608
+    ],
+    "hit@3_delta_vs_step1_mean_ci95": [
+     0.0,
+     0.0,
+     0.0
+    ],
+    "mrr@10_delta_vs_gpt_mean_ci95": [
+     -0.1148,
+     -0.1476,
+     -0.0823
+    ],
+    "mrr@10_delta_vs_step1_mean_ci95": [
+     0.0,
+     0.0,
+     0.0
+    ]
+   },
+   "gpt-4o-mini title pick": {
+    "hit@1": 0.6013513513513513,
+    "hit@3": 0.7533783783783784,
+    "hit@5": 0.8243243243243243,
+    "hit@10": 0.8682432432432432,
+    "mrr@10": 0.691697501072501,
+    "ndcg@10": 0.6969839202583448,
+    "n_queries": 296,
+    "not_found": 7,
+    "vs_step1_better": 96,
+    "vs_step1_worse": 23,
+    "vs_gpt_better": 0,
+    "vs_gpt_worse": 0,
+    "hit@3_delta_vs_gpt_mean_ci95": [
+     0.0,
+     0.0,
+     0.0
+    ],
+    "hit@3_delta_vs_step1_mean_ci95": [
+     0.1081,
+     0.0608,
+     0.1554
+    ],
+    "mrr@10_delta_vs_gpt_mean_ci95": [
+     0.0,
+     0.0,
+     0.0
+    ],
+    "mrr@10_delta_vs_step1_mean_ci95": [
+     0.1148,
+     0.0823,
+     0.1476
+    ]
+   },
+   "J1 Jev: title only": {
+    "hit@1": 0.5067567567567568,
+    "hit@3": 0.722972972972973,
+    "hit@5": 0.7871621621621622,
+    "hit@10": 0.8648648648648649,
+    "mrr@10": 0.6252305877305877,
+    "ndcg@10": 0.6485898461977012,
+    "n_queries": 296,
+    "not_found": 7,
+    "vs_step1_better": 93,
+    "vs_step1_worse": 68,
+    "vs_gpt_better": 49,
+    "vs_gpt_worse": 80,
+    "hit@3_delta_vs_gpt_mean_ci95": [
+     -0.0304,
+     -0.0777,
+     0.0169
+    ],
+    "hit@3_delta_vs_step1_mean_ci95": [
+     0.0777,
+     0.0169,
+     0.1385
+    ],
+    "mrr@10_delta_vs_gpt_mean_ci95": [
+     -0.0665,
+     -0.1035,
+     -0.0298
+    ],
+    "mrr@10_delta_vs_step1_mean_ci95": [
+     0.0483,
+     0.0009,
+     0.0954
+    ],
+    "fallback_questions": 0,
+    "top1_tied_questions": 10,
+    "latency_sec_per_question": {
+     "median": 0.556,
+     "p90": 0.6465000000000001,
+     "n_measured": 296
+    },
+    "input_tokens": 4360142,
+    "usd": 0.1831
+   },
+   "J2 Jev: title + paragraph ~300 tok": {
+    "hit@1": 0.39864864864864863,
+    "hit@3": 0.6013513513513513,
+    "hit@5": 0.7162162162162162,
+    "hit@10": 0.831081081081081,
+    "mrr@10": 0.5295903045903047,
+    "ndcg@10": 0.5670688347306518,
+    "n_queries": 296,
+    "not_found": 7,
+    "vs_step1_better": 78,
+    "vs_step1_worse": 95,
+    "vs_gpt_better": 39,
+    "vs_gpt_worse": 115,
+    "hit@3_delta_vs_gpt_mean_ci95": [
+     -0.152,
+     -0.2095,
+     -0.098
+    ],
+    "hit@3_delta_vs_step1_mean_ci95": [
+     -0.0439,
+     -0.1047,
+     0.0203
+    ],
+    "mrr@10_delta_vs_gpt_mean_ci95": [
+     -0.1621,
+     -0.2077,
+     -0.1151
+    ],
+    "mrr@10_delta_vs_step1_mean_ci95": [
+     -0.0473,
+     -0.0976,
+     0.0042
+    ],
+    "fallback_questions": 0,
+    "top1_tied_questions": 18,
+    "latency_sec_per_question": {
+     "median": 0.566,
+     "p90": 0.6805000000000001,
+     "n_measured": 296
+    },
+    "input_tokens": 7074622,
+    "usd": 0.2971
+   },
+   "J3 Jev: title + full paragraph": {
+    "hit@1": 0.3885135135135135,
+    "hit@3": 0.597972972972973,
+    "hit@5": 0.6925675675675675,
+    "hit@10": 0.8209459459459459,
+    "mrr@10": 0.5226458601458601,
+    "ndcg@10": 0.5624715046657577,
+    "n_queries": 296,
+    "not_found": 7,
+    "vs_step1_better": 72,
+    "vs_step1_worse": 105,
+    "vs_gpt_better": 37,
+    "vs_gpt_worse": 124,
+    "hit@3_delta_vs_gpt_mean_ci95": [
+     -0.1554,
+     -0.2095,
+     -0.1047
+    ],
+    "hit@3_delta_vs_step1_mean_ci95": [
+     -0.0473,
+     -0.1081,
+     0.0135
+    ],
+    "mrr@10_delta_vs_gpt_mean_ci95": [
+     -0.1691,
+     -0.2143,
+     -0.1227
+    ],
+    "mrr@10_delta_vs_step1_mean_ci95": [
+     -0.0542,
+     -0.1037,
+     -0.0033
+    ],
+    "fallback_questions": 0,
+    "top1_tied_questions": 18,
+    "latency_sec_per_question": {
+     "median": 0.8095000000000001,
+     "p90": 0.989,
+     "n_measured": 296
+    },
+    "input_tokens": 13248379,
+    "usd": 0.5564
+   }
+  }
+ },
+ "agent_clean_150": {
+  "n": 150,
+  "gold_in_30_candidates": 0.9333333333333333,
+  "gpt_cache_missing": 0,
+  "gpt_cache_candidate_mismatch": 0,
+  "gpt_latency_sec": {
+   "median": 0.763,
+   "p90": 0.9201,
+   "note": "single call, measured 05.10 by title_llm.py"
+  },
+  "variants": {
+   "base (title_content, step 1)": {
+    "hit@1": 0.6,
+    "hit@3": 0.7866666666666666,
+    "hit@5": 0.86,
+    "hit@10": 0.8933333333333333,
+    "mrr@10": 0.710931216931217,
+    "ndcg@10": 0.756036814365185,
+    "n_queries": 150,
+    "not_found": 1,
+    "vs_step1_better": 0,
+    "vs_step1_worse": 0,
+    "vs_gpt_better": 14,
+    "vs_gpt_worse": 26,
+    "hit@3_delta_vs_gpt_mean_ci95": [
+     -0.0533,
+     -0.1,
+     -0.0067
+    ],
+    "hit@3_delta_vs_step1_mean_ci95": [
+     0.0,
+     0.0,
+     0.0
+    ],
+    "mrr@10_delta_vs_gpt_mean_ci95": [
+     -0.046,
+     -0.0854,
+     -0.0067
+    ],
+    "mrr@10_delta_vs_step1_mean_ci95": [
+     0.0,
+     0.0,
+     0.0
+    ]
+   },
+   "gpt-4o-mini title pick": {
+    "hit@1": 0.6666666666666666,
+    "hit@3": 0.84,
+    "hit@5": 0.86,
+    "hit@10": 0.9133333333333333,
+    "mrr@10": 0.7569708994708995,
+    "ndcg@10": 0.7951618976685907,
+    "n_queries": 150,
+    "not_found": 1,
+    "vs_step1_better": 26,
+    "vs_step1_worse": 14,
+    "vs_gpt_better": 0,
+    "vs_gpt_worse": 0,
+    "hit@3_delta_vs_gpt_mean_ci95": [
+     0.0,
+     0.0,
+     0.0
+    ],
+    "hit@3_delta_vs_step1_mean_ci95": [
+     0.0533,
+     0.0067,
+     0.1
+    ],
+    "mrr@10_delta_vs_gpt_mean_ci95": [
+     0.0,
+     0.0,
+     0.0
+    ],
+    "mrr@10_delta_vs_step1_mean_ci95": [
+     0.046,
+     0.0067,
+     0.0854
+    ]
+   },
+   "J1 Jev: title only": {
+    "hit@1": 0.5266666666666666,
+    "hit@3": 0.7733333333333333,
+    "hit@5": 0.8533333333333334,
+    "hit@10": 0.8933333333333333,
+    "mrr@10": 0.6621455026455026,
+    "ndcg@10": 0.719124753938795,
+    "n_queries": 150,
+    "not_found": 1,
+    "vs_step1_better": 34,
+    "vs_step1_worse": 42,
+    "vs_gpt_better": 23,
+    "vs_gpt_worse": 45,
+    "hit@3_delta_vs_gpt_mean_ci95": [
+     -0.0667,
+     -0.12,
+     -0.0198
+    ],
+    "hit@3_delta_vs_step1_mean_ci95": [
+     -0.0133,
+     -0.08,
+     0.0533
+    ],
+    "mrr@10_delta_vs_gpt_mean_ci95": [
+     -0.0948,
+     -0.1471,
+     -0.0422
+    ],
+    "mrr@10_delta_vs_step1_mean_ci95": [
+     -0.0488,
+     -0.1131,
+     0.0145
+    ],
+    "fallback_questions": 0,
+    "top1_tied_questions": 12,
+    "latency_sec_per_question": {
+     "median": 0.551,
+     "p90": 0.6521,
+     "n_measured": 150
+    },
+    "input_tokens": 2257486,
+    "usd": 0.0948
+   },
+   "J2 Jev: title + paragraph ~300 tok": {
+    "hit@1": 0.64,
+    "hit@3": 0.78,
+    "hit@5": 0.8533333333333334,
+    "hit@10": 0.9,
+    "mrr@10": 0.727526455026455,
+    "ndcg@10": 0.7693159695015339,
+    "n_queries": 150,
+    "not_found": 1,
+    "vs_step1_better": 36,
+    "vs_step1_worse": 35,
+    "vs_gpt_better": 24,
+    "vs_gpt_worse": 34,
+    "hit@3_delta_vs_gpt_mean_ci95": [
+     -0.06,
+     -0.1133,
+     -0.0067
+    ],
+    "hit@3_delta_vs_step1_mean_ci95": [
+     -0.0067,
+     -0.0733,
+     0.06
+    ],
+    "mrr@10_delta_vs_gpt_mean_ci95": [
+     -0.0294,
+     -0.088,
+     0.0277
+    ],
+    "mrr@10_delta_vs_step1_mean_ci95": [
+     0.0166,
+     -0.0473,
+     0.0817
+    ],
+    "fallback_questions": 0,
+    "top1_tied_questions": 9,
+    "latency_sec_per_question": {
+     "median": 0.55,
+     "p90": 0.6554,
+     "n_measured": 150
+    },
+    "input_tokens": 3645132,
+    "usd": 0.1531
+   },
+   "J3 Jev: title + full paragraph": {
+    "hit@1": 0.66,
+    "hit@3": 0.8133333333333334,
+    "hit@5": 0.8866666666666667,
+    "hit@10": 0.9066666666666666,
+    "mrr@10": 0.748074074074074,
+    "ndcg@10": 0.7870633430056418,
+    "n_queries": 150,
+    "not_found": 1,
+    "vs_step1_better": 36,
+    "vs_step1_worse": 29,
+    "vs_gpt_better": 26,
+    "vs_gpt_worse": 30,
+    "hit@3_delta_vs_gpt_mean_ci95": [
+     -0.0267,
+     -0.0867,
+     0.04
+    ],
+    "hit@3_delta_vs_step1_mean_ci95": [
+     0.0267,
+     -0.0467,
+     0.1
+    ],
+    "mrr@10_delta_vs_gpt_mean_ci95": [
+     -0.0089,
+     -0.0707,
+     0.053
+    ],
+    "mrr@10_delta_vs_step1_mean_ci95": [
+     0.0371,
+     -0.0279,
+     0.1036
+    ],
+    "fallback_questions": 0,
+    "top1_tied_questions": 14,
+    "latency_sec_per_question": {
+     "median": 0.8365,
+     "p90": 0.993,
+     "n_measured": 150
+    },
+    "input_tokens": 6681894,
+    "usd": 0.2806
+   }
+  }
+ },
+ "_jev": {
+  "models_seen": [
+   "jev-1.13.0"
+  ],
+  "this_run_new_calls": 39600,
+  "this_run_failed_calls": 0,
+  "this_run_input_tokens": 36773854,
+  "this_run_usd": 1.5445,
+  "projected_usd_before_run": 1.5234
+ }
+}
