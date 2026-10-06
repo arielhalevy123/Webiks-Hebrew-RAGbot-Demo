@@ -13,6 +13,10 @@ Built-in providers
     anthropic  Anthropic Messages API. Needs `pip install anthropic`. Key: `api_key`, else ANTHROPIC_API_KEY.
     gemini     Google Gemini through google-generativeai (already in requirements.txt).
                Key: `api_key`, else GOOGLE_API_KEY, else GEMINI_API_KEY.
+    typesafe   TypeSafe Jev (model jev-latest) over plain HTTP with `requests`. Not a chat model: it is a
+               *scoring* model. It exposes `score_titles(question, titles, *, ids, timeout) -> [probability]`,
+               one Jev Choice question over all candidate titles, and title_rerank.py sorts by those
+               probabilities. Key: `api_key`, else TYPESAFE_API_KEY.
 
 Adding another model takes a few lines and no change anywhere else:
 
@@ -24,6 +28,10 @@ Adding another model takes a few lines and no change anywhere else:
         def complete(self, system, user, *, max_tokens=200, json_mode=False, timeout=10.0) -> str: ...
 
 and then TITLE_RERANK_PROVIDER=my-llm in .env.
+
+A provider may instead expose `score_titles(question, titles, *, ids=None, timeout=10.0) -> list[float]`,
+one score per title in input order; title_rerank.py then sorts the candidates by score (stable, so ties keep
+retrieval order) instead of asking for a ranked list.
 
 SDKs are imported lazily, when a provider is created, so an unused provider never needs to be installed.
 """
@@ -117,3 +125,62 @@ class GeminiChat:
         model = self._genai.GenerativeModel(self.model_name, system_instruction=system, generation_config=config)
         r = model.generate_content(user, request_options={"timeout": timeout})
         return (r.text or "").strip()
+
+
+# Kept byte-identical to INSTR["C1"] in retrieval_eval/jev_rerank.py, the instruction the "C1" numbers were
+# measured with (a unit test checks this).
+JEV_CHOICE_INSTRUCTIONS = (
+    "The state holds a question a member of the public asked (in Hebrew). Each option is a candidate page "
+    "from Kol-Zchut, the Israeli rights-information website, named by its page title. Which page answers "
+    "the question? Choose the page about the specific right, benefit, procedure or situation the question "
+    "asks about that fits the population and sub-case the question describes (who the person is, their "
+    "status, the specific circumstance), rather than a page on a related or broader topic.")
+
+
+@register_provider("typesafe")
+class TypeSafeJev:
+    """TypeSafe Jev as a title scorer: one Choice question whose options are the candidate titles.
+
+    Request and response handling mirror retrieval_eval/jev_rerank.py (variant C1). Any HTTP error, timeout
+    or malformed reply raises; the caller (TitleReranker) then keeps the plain retrieval order.
+    """
+    DEFAULT_URL = "https://api.typesafe.ai/v1/systemone"
+
+    def __init__(self, model: str, api_key: Optional[str] = None, base_url: Optional[str] = None, **_):
+        import requests  # already a dependency (requirements.txt)
+        self._requests = requests
+        self.model = model
+        self.api_key = api_key or _first_env("TYPESAFE_API_KEY")
+        self.url = base_url or self.DEFAULT_URL
+
+    @staticmethod
+    def build_request(model: str, question: str, titles: list, ids: Optional[list] = None) -> tuple:
+        """The request body and the option key of each title. Option keys are the stripped titles; a repeated
+        title gets " (doc <id>)" appended (its doc_id, else its position) so every option stays distinct."""
+        options, keys, seen = {}, [], set()
+        for i, t in enumerate(titles):
+            t = str(t).strip()
+            k = t if t not in seen else f"{t} (doc {ids[i] if ids else i + 1})"
+            seen.add(t)
+            options[k] = None
+            keys.append(k)
+        body = {"model": model, "state": {"question": question},
+                "questions": {"answering_page": {"type": "choice", "instructions": JEV_CHOICE_INSTRUCTIONS,
+                                                 "criteria": options}}}
+        return body, keys
+
+    def score_titles(self, question: str, titles: list, *, ids: Optional[list] = None, timeout: float = 10.0) -> list:
+        if not self.api_key:
+            raise RuntimeError("no TypeSafe API key (set TITLE_RERANK_API_KEY or TYPESAFE_API_KEY)")
+        body, keys = self.build_request(self.model, question, titles, ids)
+        r = self._requests.post(self.url, headers={"Authorization": f"Bearer {self.api_key}"}, json=body,
+                                timeout=timeout)
+        if r.status_code != 200:
+            raise RuntimeError(f"TypeSafe HTTP {r.status_code}")
+        probs = r.json()["answers"]["answering_page"].get("probabilities")
+        if not isinstance(probs, dict) or not probs:
+            raise ValueError("TypeSafe reply has no probabilities")
+        return [float(probs.get(k) or 0.0) for k in keys]
+
+    def complete(self, system, user, *, max_tokens=200, json_mode=False, timeout=10.0):
+        raise NotImplementedError("the typesafe provider scores titles (score_titles); it is not a chat model")

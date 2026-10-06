@@ -15,14 +15,19 @@ How it works when enabled
   Any failure (no key, timeout, unparsable reply) falls back to the plain retrieval order, logs a
   warning, and never fails the request.
 
+  Scoring providers (TITLE_RERANK_PROVIDER=typesafe, TypeSafe Jev): instead of step 2, one Jev Choice
+  question over the candidate titles returns a probability per page; pages are sorted by it, highest
+  first, and ties (including the many zero-probability pages) keep retrieval order. This is variant "C1"
+  of retrieval_eval/jev_rerank.py; results in docs/JEV_RERANK.md.
+
 Measured (retrieval_eval/title_llm.py, gpt-4o-mini, on top of the title-in-text index, hit@1):
   vendor held-out 296: 0.463 -> 0.601; agent-written clean set 150: 0.600 -> 0.667;
   IdoAgai's public generated set 300: 0.537 -> 0.607. Median added latency ~0.8 s per query.
 
 Turn it on (app/.env):
   TITLE_RERANK_ENABLED=true
-  TITLE_RERANK_PROVIDER=openai            # openai | anthropic | gemini | any registered name
-  TITLE_RERANK_MODEL=gpt-4o-mini
+  TITLE_RERANK_PROVIDER=openai            # openai | anthropic | gemini | typesafe | any registered name
+  TITLE_RERANK_MODEL=gpt-4o-mini          # for typesafe: jev-latest (key TYPESAFE_API_KEY)
   TITLE_RERANK_API_KEY=                   # empty: the provider's usual variable (OAI_API_KEY, ...)
   TITLE_RERANK_BASE_URL=                  # only for OpenAI-compatible servers (Azure, Ollama, vLLM)
   TITLE_RERANK_CANDIDATES=30
@@ -75,6 +80,10 @@ def parse_ranking(reply: str, n_candidates: int, max_picks: int = 10) -> List[in
     return out
 
 
+# Model used when TITLE_RERANK_MODEL is empty.
+DEFAULT_MODELS = {"openai": "gpt-4o-mini", "typesafe": "jev-latest"}
+
+
 @dataclass
 class TitleRerankSettings:
     enabled: bool = False
@@ -90,9 +99,10 @@ class TitleRerankSettings:
     @classmethod
     def from_env(cls) -> "TitleRerankSettings":
         env = os.getenv
+        provider = env("TITLE_RERANK_PROVIDER", "openai")
         return cls(enabled=env("TITLE_RERANK_ENABLED", "false").strip().lower() in ("1", "true", "yes", "on"),
-                   provider=env("TITLE_RERANK_PROVIDER", "openai"),
-                   model=env("TITLE_RERANK_MODEL", "gpt-4o-mini"),
+                   provider=provider,
+                   model=env("TITLE_RERANK_MODEL") or DEFAULT_MODELS.get(provider.strip().lower(), "gpt-4o-mini"),
                    api_key=env("TITLE_RERANK_API_KEY") or None,
                    base_url=env("TITLE_RERANK_BASE_URL") or None,
                    candidates=int(env("TITLE_RERANK_CANDIDATES", "30")),
@@ -109,6 +119,8 @@ class TitleReranker:
         if len(docs) < 2:
             return docs
         titles = [str(d.get(self.title_field, "")) for d in docs]
+        if hasattr(self.chat_model, "score_titles"):
+            return self._rerank_by_scores(question, docs, titles)
         try:
             reply = self.chat_model.complete(PICK_PROMPT, build_user_message(question, titles),
                                              max_tokens=120, json_mode=True, timeout=self.timeout_secs)
@@ -120,7 +132,26 @@ class TitleReranker:
             logging.warning(f"title rerank skipped, unparsable reply: {reply[:200]!r}")
             return docs
         chosen = set(picked)
+        logging.info(f"title rerank applied (picked {[i + 1 for i in picked]})")
         return [docs[i] for i in picked] + [d for i, d in enumerate(docs) if i not in chosen]
+
+    def _rerank_by_scores(self, question: str, docs: List[dict], titles: List[str]) -> List[dict]:
+        """Scoring providers (TypeSafe Jev): sort by score, highest first; the sort is stable, so ties and
+        zero-score pages keep retrieval order. Any failure or a malformed reply keeps retrieval order."""
+        try:
+            scores = self.chat_model.score_titles(question, titles, ids=[d.get("doc_id") for d in docs],
+                                                  timeout=self.timeout_secs)
+            if len(scores) != len(docs):
+                raise ValueError(f"{len(scores)} scores for {len(docs)} candidates")
+            scores = [float(s) for s in scores]
+        except Exception as e:  # network, auth, timeout, malformed reply
+            logging.warning(f"title rerank skipped, scoring call failed: {e}")
+            return docs
+        order = sorted(range(len(docs)), key=lambda i: -scores[i])
+        logging.info(f"title rerank applied via {type(self.chat_model).__name__}: candidate order "
+                     f"{[i + 1 for i in order[:5]]}..., top score {scores[order[0]]:.3f}, "
+                     f"{sum(s > 0 for s in scores)} of {len(docs)} non-zero")
+        return [docs[i] for i in order]
 
 
 class TitleRerankingEngine:
