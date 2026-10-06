@@ -17,3 +17,16 @@ next to each and nothing in them was edited.
 | `06_rerank_off_arnona.png` | 05.10, shipped index, rerank **off** (the default). Held-out question *איזה מסמכים אני צריך לצרף בשביל לקבל הנחה בארנונה בגין נכות כללית* (gold: הנחה בארנונה לנכים): the sibling לנכי עבודה is first, the gold page second. |
 | `07_rerank_on_arnona.png` | Same question, same index, a second backend instance with `TITLE_RERANK_ENABLED=true` (gpt-4o-mini, mock answer model, hence the raw mock text in the answer box): הנחה בארנונה לנכים first. Retrieval time includes the LLM call. |
 | `08_three_eval_sets.png` (+ `.txt`) | hit@1 / hit@3 / MRR@10 on the three evaluation sets for the original system, the shipped change, rerank only, shipped + rerank, and the not-shipped w=0.3 title vector. |
+
+## Jev title rerank (branch `jev-rerank-experiment`, 07.10)
+
+Taken on the live backend (`localhost:5050`) with `TITLE_RERANK_PROVIDER=typesafe` (Jev Choice over 30 titles,
+setup C1) and the real answering model. See `docs/JEV_RERANK.md`.
+
+| file | what it shows |
+|---|---|
+| `jev_01_ui_urgent_passport.png` | *דרכון דחוף*: הוצאת דרכון זמני first; Jev lifted תעודות זהות, דרכונים ותעודות מעבר from #11 to #2. |
+| `jev_02_ui_reserve_duty_school.png` | Held-out *אני במילואים האם ניתן להשהות את בני מבית הספר*: all three pages come from positions 14, 22, 23 of step 1. In this call the gold page was #2 (it was #1 in 7 of 8 live calls). |
+| `jev_03_ui_unemployment_workdays.png` | Held-out *סופרים ימי עבודה או ימים רגילים בשביל לקבל אבטלה?*: gold תקופת אכשרה לדמי אבטלה lifted from #18 to #1. |
+| `jev_04_before_after.png` | Step-1 top 5 vs top 5 after the Jev rerank for the two held-out questions, with Jev's probabilities (one call each). Rendered HTML of live results. |
+| `jev_05_search_response_json.png` | Raw `/search` response for *דרכון דחוף* (content shortened) and the backend log lines showing the rerank ran via TypeSafeJev. Rendered HTML of real output. |

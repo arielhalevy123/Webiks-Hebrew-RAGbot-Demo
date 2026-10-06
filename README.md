@@ -15,6 +15,47 @@
 > | **Run it** | SUBMISSION.md §5. Short version: Python 3.10–3.12, `pip install -r requirements.txt`, Elasticsearch 8.12.2 in Docker, model in `app/artifacts/`, corpus in `data/`, then `python retrieval_eval/fast_index.py --corpus data/paragraph_corpus.json` (follows `doc-config.json`; minutes instead of hours) and `cd app/src && python -m uvicorn main:app --port 5050`. |
 > | **Known upstream quirks** | `uvicorn app.src.main:app` does not resolve; start from `app/src`. Port 5000 is AirPlay on macOS. The openai client refuses an empty key even with `IS_MOCK_GPT_CLIENT=true`. 6 tests in `tests/test_main.py` error on upstream and here alike (the test patches `builtins.open` during import). |
 
+**Presentation (explainer, 3 slides):** [PDF](docs/presentation/Presentation.pdf) · [PPTX](docs/presentation/Presentation.pptx) · [Hebrew PDF](docs/presentation/Presentation_he.pdf)
+
+**TypeSafe Jev as the optional title rerank:** one Jev Choice question over the 30 candidate titles, on par with the gpt-4o-mini pick (paired 95% CIs include 0), faster and cheaper. Results and caveats in [`docs/JEV_RERANK.md`](docs/JEV_RERANK.md).
+
+### How it works
+
+```mermaid
+flowchart LR
+    Q[Question] --> E[Query embedding<br/>fine-tuned multilingual-e5]
+    E --> S[Elasticsearch cosine<br/>over paragraph vectors<br/>paragraph embedded with its page title]
+    S -->|rerank off: top 50 paragraphs| P3[Top 3 pages]
+    S -->|rerank on: top 200 paragraphs| P30[Top 30 pages]
+    P30 --> R[Title rerank, optional, off by default<br/>Jev Choice or gpt-4o-mini via LLM factory]
+    R --> P3
+    P3 --> A[GPT answer]
+```
+
+### Screenshots
+
+![Live Demo with the Jev rerank on: urgent passport](docs/screenshots/jev_01_ui_urgent_passport.png)
+
+*דרכון דחוף* with the Jev rerank on: הוצאת דרכון זמני first.
+
+![Step-1 order vs after the Jev rerank](docs/screenshots/jev_04_before_after.png)
+
+Two held-out questions where step 1 had the gold page at #22 and #18; one Jev Choice call moves it to #1.
+
+![Unemployment question, gold page first](docs/screenshots/jev_03_ui_unemployment_workdays.png)
+
+*סופרים ימי עבודה או ימים רגילים בשביל לקבל אבטלה?*: the gold page תקופת אכשרה לדמי אבטלה lifted from #18 to #1.
+
+![Demo search, urgent passport, rerank off](docs/screenshots/05_demo_search_darkon_dachuf.png)
+
+The Demo with the rerank off (04.10; same top three when re-checked on the shipped index on 05.10): הוצאת דרכון זמני first, where the original system ranked it second.
+
+![Evaluation run, original vs shipped](docs/screenshots/03_eval_baseline_vs_shipped.png)
+
+296 held-out questions, original vs title in the embedded text: hit@1 0.368 → 0.463, MRR@10 0.496 → 0.577.
+
+More in [`docs/screenshots/`](docs/screenshots/).
+
 The original README follows.
 
 ---
@@ -36,7 +77,7 @@ You can train model by yourself. You can see the train code [here](https://githu
 
 ## Flow of Project
 
-![kolzchut-chart drawio](./kolzchut-chart.drawio.png)
+Diagram redrawn above (How it works).
 
 1. The user submits a question using the /search route.
 2. The question is forwarded to the ragbot.
