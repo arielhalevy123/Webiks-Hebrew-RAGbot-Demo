@@ -1,0 +1,366 @@
+{
+ "_config": {
+  "jev_model_alias": "jev-latest",
+  "pattern": "one Choice per question over the candidate titles, sort by probability desc, stable",
+  "instructions": {
+   "C1": "The state holds a question a member of the public asked (in Hebrew). Each option is a candidate page from Kol-Zchut, the Israeli rights-information website, named by its page title. Which page answers the question? Choose the page about the specific right, benefit, procedure or situation the question asks about that fits the population and sub-case the question describes (who the person is, their status, the specific circumstance), rather than a page on a related or broader topic.",
+   "C2": "The state holds a question a member of the public asked (in Hebrew). Each option is a candidate page from Kol-Zchut, the Israeli rights-information website, named by its page title and described by the start of the page paragraph that best matches the question. Which page answers the question? Choose the page about the specific right, benefit, procedure or situation the question asks about that fits the population and sub-case the question describes (who the person is, their status, the specific circumstance), rather than a page on a related or broader topic."
+  },
+  "c2_chars": 180,
+  "n_candidates": 30,
+  "base": "title_content",
+  "limit": 0
+ },
+ "vendor_heldout_296": {
+  "n": 296,
+  "gold_in_30_candidates": 0.8986486486486487,
+  "gpt_cache_missing": 0,
+  "gpt_cache_candidate_mismatch": 0,
+  "gpt_latency_sec": {
+   "median": 0.7344999999999999,
+   "p90": 0.9155,
+   "note": "single call, measured 05.10 by title_llm.py"
+  },
+  "variants": {
+   "base (title_content, step 1)": {
+    "hit@1": 0.46283783783783783,
+    "hit@3": 0.6452702702702703,
+    "hit@5": 0.7195945945945946,
+    "hit@10": 0.8209459459459459,
+    "mrr@10": 0.5768822393822394,
+    "ndcg@10": 0.5981842823704223,
+    "n_queries": 296,
+    "not_found": 7,
+    "vs_step1_better": 0,
+    "vs_step1_worse": 0,
+    "vs_gpt_better": 23,
+    "vs_gpt_worse": 96,
+    "hit@3_delta_vs_gpt_mean_ci95": [
+     -0.1081,
+     -0.1554,
+     -0.0608
+    ],
+    "hit@3_delta_vs_step1_mean_ci95": [
+     0.0,
+     0.0,
+     0.0
+    ],
+    "mrr@10_delta_vs_gpt_mean_ci95": [
+     -0.1148,
+     -0.1476,
+     -0.0823
+    ],
+    "mrr@10_delta_vs_step1_mean_ci95": [
+     0.0,
+     0.0,
+     0.0
+    ]
+   },
+   "gpt-4o-mini title pick": {
+    "hit@1": 0.6013513513513513,
+    "hit@3": 0.7533783783783784,
+    "hit@5": 0.8243243243243243,
+    "hit@10": 0.8682432432432432,
+    "mrr@10": 0.691697501072501,
+    "ndcg@10": 0.6969839202583448,
+    "n_queries": 296,
+    "not_found": 7,
+    "vs_step1_better": 96,
+    "vs_step1_worse": 23,
+    "vs_gpt_better": 0,
+    "vs_gpt_worse": 0,
+    "hit@3_delta_vs_gpt_mean_ci95": [
+     0.0,
+     0.0,
+     0.0
+    ],
+    "hit@3_delta_vs_step1_mean_ci95": [
+     0.1081,
+     0.0608,
+     0.1554
+    ],
+    "mrr@10_delta_vs_gpt_mean_ci95": [
+     0.0,
+     0.0,
+     0.0
+    ],
+    "mrr@10_delta_vs_step1_mean_ci95": [
+     0.1148,
+     0.0823,
+     0.1476
+    ]
+   },
+   "C1 Jev Choice: 30 titles": {
+    "hit@1": 0.6148648648648649,
+    "hit@3": 0.7804054054054054,
+    "hit@5": 0.8513513513513513,
+    "hit@10": 0.8952702702702703,
+    "mrr@10": 0.709762441012441,
+    "ndcg@10": 0.7248419537093675,
+    "n_queries": 296,
+    "not_found": 7,
+    "vs_step1_better": 102,
+    "vs_step1_worse": 38,
+    "vs_gpt_better": 52,
+    "vs_gpt_worse": 38,
+    "hit@3_delta_vs_gpt_mean_ci95": [
+     0.027,
+     -0.0135,
+     0.0676
+    ],
+    "hit@3_delta_vs_step1_mean_ci95": [
+     0.1351,
+     0.0777,
+     0.1926
+    ],
+    "mrr@10_delta_vs_gpt_mean_ci95": [
+     0.0181,
+     -0.0158,
+     0.0536
+    ],
+    "mrr@10_delta_vs_step1_mean_ci95": [
+     0.1329,
+     0.0894,
+     0.1771
+    ],
+    "fallback_questions": 0,
+    "top1_tied_questions": 2,
+    "options_missing_in_reply": 0,
+    "median_candidates_with_nonzero_score": 7.0,
+    "latency_sec_per_question": {
+     "median": 0.442,
+     "p90": 0.504,
+     "n_measured": 296
+    },
+    "input_tokens": 464125,
+    "usd": 0.0195
+   },
+   "C2 Jev Choice: 30 titles + ~150 tok snippet": {
+    "hit@1": 0.5912162162162162,
+    "hit@3": 0.7702702702702703,
+    "hit@5": 0.8378378378378378,
+    "hit@10": 0.8885135135135135,
+    "mrr@10": 0.696110842985843,
+    "ndcg@10": 0.7068837358051605,
+    "n_queries": 296,
+    "not_found": 7,
+    "vs_step1_better": 97,
+    "vs_step1_worse": 41,
+    "vs_gpt_better": 54,
+    "vs_gpt_worse": 54,
+    "hit@3_delta_vs_gpt_mean_ci95": [
+     0.0169,
+     -0.027,
+     0.0608
+    ],
+    "hit@3_delta_vs_step1_mean_ci95": [
+     0.125,
+     0.0743,
+     0.1757
+    ],
+    "mrr@10_delta_vs_gpt_mean_ci95": [
+     0.0044,
+     -0.0306,
+     0.0403
+    ],
+    "mrr@10_delta_vs_step1_mean_ci95": [
+     0.1192,
+     0.0769,
+     0.1625
+    ],
+    "fallback_questions": 0,
+    "top1_tied_questions": 4,
+    "options_missing_in_reply": 0,
+    "median_candidates_with_nonzero_score": 7.0,
+    "latency_sec_per_question": {
+     "median": 0.526,
+     "p90": 0.5825,
+     "n_measured": 296
+    },
+    "input_tokens": 1790797,
+    "usd": 0.0752
+   }
+  }
+ },
+ "agent_clean_150": {
+  "n": 150,
+  "gold_in_30_candidates": 0.9333333333333333,
+  "gpt_cache_missing": 0,
+  "gpt_cache_candidate_mismatch": 0,
+  "gpt_latency_sec": {
+   "median": 0.763,
+   "p90": 0.9201,
+   "note": "single call, measured 05.10 by title_llm.py"
+  },
+  "variants": {
+   "base (title_content, step 1)": {
+    "hit@1": 0.6,
+    "hit@3": 0.7866666666666666,
+    "hit@5": 0.86,
+    "hit@10": 0.8933333333333333,
+    "mrr@10": 0.710931216931217,
+    "ndcg@10": 0.756036814365185,
+    "n_queries": 150,
+    "not_found": 1,
+    "vs_step1_better": 0,
+    "vs_step1_worse": 0,
+    "vs_gpt_better": 14,
+    "vs_gpt_worse": 26,
+    "hit@3_delta_vs_gpt_mean_ci95": [
+     -0.0533,
+     -0.1,
+     -0.0067
+    ],
+    "hit@3_delta_vs_step1_mean_ci95": [
+     0.0,
+     0.0,
+     0.0
+    ],
+    "mrr@10_delta_vs_gpt_mean_ci95": [
+     -0.046,
+     -0.0854,
+     -0.0067
+    ],
+    "mrr@10_delta_vs_step1_mean_ci95": [
+     0.0,
+     0.0,
+     0.0
+    ]
+   },
+   "gpt-4o-mini title pick": {
+    "hit@1": 0.6666666666666666,
+    "hit@3": 0.84,
+    "hit@5": 0.86,
+    "hit@10": 0.9133333333333333,
+    "mrr@10": 0.7569708994708995,
+    "ndcg@10": 0.7951618976685907,
+    "n_queries": 150,
+    "not_found": 1,
+    "vs_step1_better": 26,
+    "vs_step1_worse": 14,
+    "vs_gpt_better": 0,
+    "vs_gpt_worse": 0,
+    "hit@3_delta_vs_gpt_mean_ci95": [
+     0.0,
+     0.0,
+     0.0
+    ],
+    "hit@3_delta_vs_step1_mean_ci95": [
+     0.0533,
+     0.0067,
+     0.1
+    ],
+    "mrr@10_delta_vs_gpt_mean_ci95": [
+     0.0,
+     0.0,
+     0.0
+    ],
+    "mrr@10_delta_vs_step1_mean_ci95": [
+     0.046,
+     0.0067,
+     0.0854
+    ]
+   },
+   "C1 Jev Choice: 30 titles": {
+    "hit@1": 0.5933333333333334,
+    "hit@3": 0.82,
+    "hit@5": 0.86,
+    "hit@10": 0.92,
+    "mrr@10": 0.7188333333333332,
+    "ndcg@10": 0.7683686975323133,
+    "n_queries": 150,
+    "not_found": 1,
+    "vs_step1_better": 31,
+    "vs_step1_worse": 30,
+    "vs_gpt_better": 21,
+    "vs_gpt_worse": 32,
+    "hit@3_delta_vs_gpt_mean_ci95": [
+     -0.02,
+     -0.0667,
+     0.02
+    ],
+    "hit@3_delta_vs_step1_mean_ci95": [
+     0.0333,
+     -0.02,
+     0.0867
+    ],
+    "mrr@10_delta_vs_gpt_mean_ci95": [
+     -0.0381,
+     -0.0838,
+     0.0063
+    ],
+    "mrr@10_delta_vs_step1_mean_ci95": [
+     0.0079,
+     -0.0481,
+     0.0633
+    ],
+    "fallback_questions": 0,
+    "top1_tied_questions": 1,
+    "options_missing_in_reply": 0,
+    "median_candidates_with_nonzero_score": 6.0,
+    "latency_sec_per_question": {
+     "median": 0.447,
+     "p90": 0.5112,
+     "n_measured": 150
+    },
+    "input_tokens": 246065,
+    "usd": 0.0103
+   },
+   "C2 Jev Choice: 30 titles + ~150 tok snippet": {
+    "hit@1": 0.6866666666666666,
+    "hit@3": 0.8333333333333334,
+    "hit@5": 0.9,
+    "hit@10": 0.9266666666666666,
+    "mrr@10": 0.7706296296296297,
+    "ndcg@10": 0.8088755014353551,
+    "n_queries": 150,
+    "not_found": 1,
+    "vs_step1_better": 34,
+    "vs_step1_worse": 28,
+    "vs_gpt_better": 26,
+    "vs_gpt_worse": 28,
+    "hit@3_delta_vs_gpt_mean_ci95": [
+     -0.0067,
+     -0.0533,
+     0.04
+    ],
+    "hit@3_delta_vs_step1_mean_ci95": [
+     0.0467,
+     -0.0067,
+     0.1067
+    ],
+    "mrr@10_delta_vs_gpt_mean_ci95": [
+     0.0137,
+     -0.0357,
+     0.0636
+    ],
+    "mrr@10_delta_vs_step1_mean_ci95": [
+     0.0597,
+     0.0046,
+     0.1145
+    ],
+    "fallback_questions": 0,
+    "top1_tied_questions": 0,
+    "options_missing_in_reply": 0,
+    "median_candidates_with_nonzero_score": 4.0,
+    "latency_sec_per_question": {
+     "median": 0.5305,
+     "p90": 0.6077999999999999,
+     "n_measured": 150
+    },
+    "input_tokens": 921542,
+    "usd": 0.0387
+   }
+  }
+ },
+ "_jev": {
+  "models_seen": [
+   "jev-1.13.0"
+  ],
+  "this_run_new_calls": 0,
+  "this_run_failed_calls": 0,
+  "this_run_input_tokens": 0,
+  "this_run_usd": 0.0,
+  "projected_usd_before_run": 0.0
+ }
+}
