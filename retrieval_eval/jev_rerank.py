@@ -39,6 +39,7 @@ JEV = "jev-latest"
 PRICE_PER_MTOK = 0.042          # input only; output tokens are free (docs.typesafe.ai/models)
 BUDGET_USD = 5.0
 J2_CHARS = 365                  # ~300 Jev tokens: Hebrew measured at ~0.82 tokens per character
+C2_CHARS = 180                  # ~150 Jev tokens per option snippet
 CALLS = os.path.join(DATA, "jev_rerank_calls.jsonl")
 QLAT = os.path.join(DATA, "jev_rerank_qlat.jsonl")
 OUT = os.path.join(REPO, "results", "jev_rerank")
@@ -53,6 +54,13 @@ INSTR = {
            "that best matches the question. Is this the page that answers the question?"),
 }
 INSTR["J3"] = INSTR["J2"].replace("the start of the page paragraph", "the page paragraph")
+INSTR["C1"] = ("The state holds a question a member of the public asked (in Hebrew). Each option is a candidate page "
+               "from Kol-Zchut, the Israeli rights-information website, named by its page title. Which page answers "
+               "the question? Choose the page about the specific right, benefit, procedure or situation the question "
+               "asks about that fits the population and sub-case the question describes (who the person is, their "
+               "status, the specific circumstance), rather than a page on a related or broader topic.")
+INSTR["C2"] = INSTR["C1"].replace("named by its page title.", "named by its page title and described by the start "
+                                  "of the page paragraph that best matches the question.")
 CRITERIA = {
     "true": ("The page is about the specific right, benefit, procedure or situation the question asks about, "
              "and fits the population and sub-case the question describes (who the person is, their status, "
@@ -74,6 +82,19 @@ def truncate(p, n):
     return (cut[:sp] if sp > n * 0.8 else cut) + " ..."
 
 
+def choice_body(variant, q, cand_docs, title_of, para_of):
+    """One Choice over all candidates; option keys are titles (doc id appended to duplicates), in retrieval order."""
+    seen, opts, key2doc = {}, {}, {}
+    for dd in cand_docs:
+        t = title_of[dd].strip()
+        k = t if t not in seen else f"{t} (doc {dd})"
+        seen[t] = True; key2doc[k] = dd
+        opts[k] = truncate(para_of(dd), C2_CHARS) if variant == "C2" else None
+    body = {"model": JEV, "state": {"question": q},
+            "questions": {"answering_page": {"type": "choice", "instructions": INSTR[variant], "criteria": opts}}}
+    return body, key2doc
+
+
 def request_body(variant, q, title, para):
     state = {"question": q, "page_title": title}
     if variant == "J2":
@@ -89,6 +110,8 @@ def body_key(variant, body):
 
 
 def est_tokens(body):
+    if body["questions"].get("answering_page"):
+        return int(0.85 * len(json.dumps(body, ensure_ascii=False))) + 330
     return int(0.85 * len(json.dumps(body["state"], ensure_ascii=False))) + 330
 
 
@@ -121,7 +144,7 @@ def boot_ci(a, b, n=10000, seed=0):
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--limit", type=int, default=0, help="first N questions per set (smoke test)")
-    ap.add_argument("--variants", default="J1,J2,J3")
+    ap.add_argument("--variants", default="J1,J2,J3,C1,C2")
     ap.add_argument("--dry-run", action="store_true", help="estimate tokens and cost, call nothing")
     args = ap.parse_args()
     variants = args.variants.split(",")
@@ -176,7 +199,8 @@ def main():
                 if r.status_code != 200:
                     break                            # 4xx other than 429: do not retry
                 js = r.json()
-                rec = {"key": k, "variant": variant, "q": q, "doc_id": dd, "noul": js["answers"]["answers_question"]["noul"],
+                ans = js["answers"].get("answers_question") or js["answers"]["answering_page"]
+                rec = {"key": k, "variant": variant, "q": q, "doc_id": dd, "noul": ans.get("noul"), "probs": ans.get("probabilities"),
                        "in": js["usage"]["input_tokens"], "out": js["usage"]["output_tokens"], "sec": sec, "model": js["model"]}
                 with lock:
                     cache[k] = rec; spent["in"] += rec["in"]; spent["out"] += rec["out"]; spent["calls"] += 1
@@ -206,7 +230,15 @@ def main():
             for dd in cands[q]:
                 pi = paras_of[dd]
                 best_para[(q, dd)] = clean(d["content"][keys[pi[int(np.argmax(s[pi]))]]])
-        bodies = {v: {q: [(dd, request_body(v, q, title_of[dd], best_para[(q, dd)])) for dd in cands[q]] for q in qs} for v in variants}
+        bodies, key2doc = {}, {}
+        for v in variants:
+            if v.startswith("C"):
+                bodies[v] = {}
+                for q in qs:
+                    b, k2d = choice_body(v, q, cands[q], title_of, lambda dd: best_para[(q, dd)])
+                    bodies[v][q] = [(None, b)]; key2doc[(v, q)] = k2d
+            else:
+                bodies[v] = {q: [(dd, request_body(v, q, title_of[dd], best_para[(q, dd)])) for dd in cands[q]] for q in qs}
 
         # cost guard: estimate the uncached part of this set before calling anything
         est = sum(est_tokens(b) for v in variants for q in qs for _, b in bodies[v][q] if body_key(v, b) not in cache)
@@ -221,7 +253,7 @@ def main():
 
         jev_rank = {v: [] for v in variants}
         fallbacks = {v: 0 for v in variants}; ties_top = {v: 0 for v in variants}; lat = {v: [] for v in variants}
-        toks = {v: 0 for v in variants}
+        toks = {v: 0 for v in variants}; missing_opts = {v: 0 for v in variants}; nonzero = {v: [] for v in variants}
         for v in variants:
             t_set = time.time()
             for i, q in enumerate(qs):
@@ -239,10 +271,19 @@ def main():
                 if not all(recs):
                     fallbacks[v] += 1; jev_rank[v].append(base_rank[i]); continue
                 toks[v] += sum(r["in"] for r in recs)
-                order = sorted(range(len(items)), key=lambda j: -recs[j]["noul"])     # stable: ties keep retrieval order
-                top = recs[order[0]]["noul"]
-                ties_top[v] += sum(1 for r in recs if r["noul"] == top) > 1
-                rk = [items[j][0] for j in order]
+                if v.startswith("C"):
+                    probs, k2d = recs[0]["probs"] or {}, key2doc[(v, q)]
+                    sc = {k2d[k]: float(p) for k, p in probs.items() if k in k2d}
+                    if len(sc) < len(k2d):
+                        missing_opts[v] += len(k2d) - len(sc)
+                    scores = [sc.get(dd, 0.0) for dd in cands[q]]; docs = cands[q]
+                else:
+                    scores = [r["noul"] for r in recs]; docs = [it[0] for it in items]
+                order = sorted(range(len(docs)), key=lambda j: -scores[j])     # stable: ties keep retrieval order
+                top = scores[order[0]]
+                ties_top[v] += sum(1 for x in scores if x == top) > 1
+                nonzero[v].append(sum(1 for x in scores if x > 0))
+                rk = [docs[j] for j in order]
                 jev_rank[v].append(rk + base_rank[i][N_CAND:])
                 if (i + 1) % 50 == 0:
                     print(f"  {set_name} {v}: {i+1}/{len(qs)} ({time.time()-t_set:.0f}s)", flush=True)
@@ -266,7 +307,8 @@ def main():
                     pass
             gpt_rank.append(picked + [dd for dd in base_rank[i] if dd not in picked])
         runs = {"base (title_content, step 1)": base_rank, "gpt-4o-mini title pick": gpt_rank}
-        names = {"J1": "J1 Jev: title only", "J2": "J2 Jev: title + paragraph ~300 tok", "J3": "J3 Jev: title + full paragraph"}
+        names = {"J1": "J1 Jev: title only", "J2": "J2 Jev: title + paragraph ~300 tok", "J3": "J3 Jev: title + full paragraph",
+                 "C1": "C1 Jev Choice: 30 titles", "C2": "C2 Jev Choice: 30 titles + ~150 tok snippet"}
         for v in variants:
             runs[names[v]] = jev_rank[v]
         per = {name: [] for name in runs}
@@ -293,6 +335,7 @@ def main():
             v = next((k for k, nm in names.items() if nm == name), None)
             if v:
                 agg.update({"fallback_questions": fallbacks[v], "top1_tied_questions": ties_top[v],
+                            "options_missing_in_reply": missing_opts[v], "median_candidates_with_nonzero_score": float(np.median(nonzero[v])) if nonzero[v] else None,
                             "latency_sec_per_question": {"median": float(np.median(lat[v])) if lat[v] else None, "p90": p90(lat[v]),
                                                           "n_measured": len(lat[v])},
                             "input_tokens": toks[v], "usd": round(toks[v] / 1e6 * PRICE_PER_MTOK, 4)})
