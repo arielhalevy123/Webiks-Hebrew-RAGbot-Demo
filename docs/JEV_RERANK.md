@@ -2,6 +2,8 @@
 
 Branch `jev-rerank-experiment`. Not part of the submitted branch (`title-context-embedding`), which is unchanged.
 
+Presentation (explainer, 3 slides): [PDF](presentation/Presentation.pdf) · [PPTX](presentation/Presentation.pptx) · [Hebrew PDF](presentation/Presentation_he.pdf)
+
 ## What changed
 
 The optional second retrieval stage (`app/src/title_rerank.py`, off by default) can now use
@@ -39,8 +41,10 @@ Restart the backend. With `TITLE_RERANK_ENABLED=false` (the default) the engine 
 
 ## Results
 
-Base retriever: the shipped title-in-text index (`title_content`), top 30 pages per question. All variants rerank
-the same 30 candidates. The gpt-4o-mini numbers are the existing title pick, read from its cache (no new OpenAI calls).
+Base retriever: the shipped title-in-text index (`title_content`), top 30 pages per question. Both rerankers see
+the same 30 candidates. Jev is asked one Choice question per query whose options are the 30 candidate titles
+(C1); C2 is the same question with a ~150-token snippet of each page's best-matching paragraph added to its option.
+The gpt-4o-mini numbers are the existing title pick, read from its cache (no new OpenAI calls).
 
 **Vendor held-out set (n = 296; gold page in the 30 candidates for 89.9%)**
 
@@ -50,9 +54,6 @@ the same 30 candidates. The gpt-4o-mini numbers are the existing title pick, rea
 | gpt-4o-mini title pick | .601 | .753 | .824 | .692 | | |
 | **C1 Jev Choice, 30 titles (shipped here)** | **.615** | **.780** | **.851** | **.710** | +.027 [-.014, +.068] | +.018 [-.016, +.054] |
 | C2 Jev Choice, titles + ~150-token snippet | .591 | .770 | .838 | .696 | +.017 [-.027, +.061] | +.004 [-.031, +.040] |
-| J1 Jev per candidate, title only | .507 | .723 | .787 | .625 | -.030 [-.078, +.017] | -.067 [-.104, -.030] |
-| J2 Jev per candidate, title + ~300-token paragraph | .399 | .601 | .716 | .530 | -.152 [-.210, -.098] | -.162 [-.208, -.115] |
-| J3 Jev per candidate, title + full paragraph | .389 | .598 | .693 | .523 | -.155 [-.210, -.105] | -.169 [-.214, -.123] |
 
 **Agent-written clean set (n = 150; gold in the 30 candidates for 93.3%)**
 
@@ -62,16 +63,13 @@ the same 30 candidates. The gpt-4o-mini numbers are the existing title pick, rea
 | gpt-4o-mini title pick | .667 | .840 | .860 | .757 | | |
 | **C1 Jev Choice, 30 titles (shipped here)** | **.593** | **.820** | **.860** | **.719** | -.020 [-.067, +.020] | -.038 [-.084, +.006] |
 | C2 Jev Choice, titles + ~150-token snippet | .687 | .833 | .900 | .771 | -.007 [-.053, +.040] | +.014 [-.036, +.064] |
-| J1 Jev per candidate, title only | .527 | .773 | .853 | .662 | -.067 [-.120, -.020] | -.095 [-.147, -.042] |
-| J2 Jev per candidate, title + ~300-token paragraph | .640 | .780 | .853 | .728 | -.060 [-.113, -.007] | -.029 [-.088, +.028] |
-| J3 Jev per candidate, title + full paragraph | .660 | .813 | .887 | .748 | -.027 [-.087, +.040] | -.009 [-.071, +.053] |
 
 CIs are paired bootstrap (10,000 resamples) on the per-question difference against gpt-4o-mini.
 Source: `results/jev_rerank/summary.json` and the per-question files next to it.
 
 Reading: C1 is on par with gpt-4o-mini. It is slightly ahead on the vendor set and slightly behind on the clean
-set, and every C1 interval includes 0. Scoring each candidate separately (J1 to J3) is clearly worse on the
-vendor set. Adding paragraph text to each candidate hurts there.
+set, and every C1 interval includes 0. C2 is also level with gpt-4o-mini (every interval includes 0); the snippets
+did not give a clear gain over titles alone and cost about four times as many tokens, so C1 is the one wired in.
 
 ## Cost and latency
 
@@ -80,10 +78,13 @@ vendor set. Adding paragraph text to each candidate hurts there.
 | gpt-4o-mini title pick | 0.73 s (vendor), 0.76 s (clean) | 0.92 s | not logged; estimated ~$0.0001 at list price |
 | C1 Jev Choice | 0.44 s | 0.50 s | ~$0.00007 measured (input only; Jev output is free) |
 | C2 Jev Choice + snippets | 0.53 s | 0.58 to 0.61 s | ~$0.00025 |
-| J3 per candidate, full paragraph | 0.81 to 0.84 s | 0.99 s | ~$0.0019 |
 
-All Jev variants on both sets together cost about $1.71 (sum of the per-variant costs in `summary.json`); the final
-Choice run alone was 880 calls and $0.14. No call failed and no question fell back to retrieval order.
+C1 and C2 on both sets together were 892 calls and about $0.14 (sum of the per-variant costs in `summary.json`).
+No call failed and no question fell back to retrieval order. Every reply is cached in
+`results/jev_rerank/jev_rerank_calls.jsonl.gz` (keyed by a hash of the request;
+it holds the question and one probability for each candidate title, no page text), so `retrieval_eval/jev_rerank.py`
+reproduces these numbers without new calls once the two cache files are unzipped into `$RAG_DATA_DIR`
+(`jev_rerank_calls.jsonl`, `jev_rerank_qlat.jsonl`).
 
 Live check on 07.10 (backend on `localhost:5050`): the rerank stage took 0.48 s inside a 1.2 s retrieval for
 *דרכון דחוף*. On the vendor questions shown below, the live top-1 matched the experiment's top-1.
